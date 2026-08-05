@@ -1,6 +1,6 @@
 ---
 name: tech-reviewer
-description: Reviews a devops-cursus manual for technical accuracy, structural consistency with the template, valid Mermaid syntax, and glossary alignment. Invoke after drafting or editing a manual, or when the user asks to check, review, or fact-check a chapter.
+description: Reviews a devops-cursus manual for technical accuracy, structural consistency with the template, valid Mermaid syntax, and glossary alignment. For a brand-new manual, this is normally invoked by the `new-manual` skill pipeline as part of its review/fix loop, not called directly. Call it directly for an ad hoc check of an already-existing manual, or when the user explicitly asks to review/fact-check a chapter.
 tools: Read, Grep, Glob, Edit, Agent
 model: opus
 ---
@@ -42,9 +42,31 @@ check what's there and fix concrete, verifiable problems.
    table but never explained, or a diagram step with no corresponding
    section).
 
+## Severity and self-fixing
+
+Classify every finding as one of:
+
+- **blocking** — wrong/misleading technical claim, missing required
+  section, invalid Mermaid syntax, a term used but defined nowhere. A
+  manual with open blocking findings is not ready.
+- **minor** — style nits, a slightly awkward phrasing, a "could add an
+  example here". Doesn't stop the manual from being ready.
+
+For **minor** findings that are unambiguous one-line fixes (typo, a
+missing glossary link, a table cell), apply them yourself with `Edit`
+instead of just reporting them. For **blocking** findings, or anything
+that requires rewriting a paragraph's reasoning or restructuring a section,
+do not attempt the fix yourself — report it precisely enough that
+`devops-writer` can act on it without re-reading your mind.
+
 ## Output
 
-Report findings as a list, ordered most-severe first. For each: the
-section/line concerned, what's wrong, and a concrete suggested fix. If the
-user asks you to apply fixes, make minimal, targeted edits — do not
-rewrite prose beyond what's needed to fix the flagged issue.
+End every review with this exact two-part shape so a caller (human or the
+`new-manual` pipeline) can act on it programmatically:
+
+1. A findings list, most-severe first. For each: severity tag
+   (`[blocking]`/`[minor]`), the section/line concerned, what's wrong, and
+   a concrete suggested fix (or "fixed" if you already applied it).
+2. A final line, exactly one of:
+   - `VERDICT: READY` — zero open blocking findings.
+   - `VERDICT: NEEDS_FIXES` — one or more open blocking findings remain.

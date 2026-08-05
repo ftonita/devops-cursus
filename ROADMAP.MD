@@ -5,7 +5,7 @@
 | № | Тема | Файл | Статус |
 |---|---|---|---|
 | 01 | CI/CD: непрерывная интеграция и доставка | `manuals/01-cicd-manual.MD` | ✅ |
-| 02 | Docker и контейнеризация | `manuals/02-docker-manual.MD` | ⬜ |
+| 02 | Docker и контейнеризация | `manuals/02-docker-manual.MD` | ✅ |
 | 03 | Kubernetes: основы оркестрации | `manuals/03-kubernetes-manual.MD` | ⬜ |
 | 04 | Git-workflow для команд (trunk-based, GitFlow, PR-процесс) | `manuals/04-git-workflow-manual.MD` | ⬜ |
 | 05 | Infrastructure as Code: Terraform и Ansible | `manuals/05-iac-manual.MD` | ⬜ |

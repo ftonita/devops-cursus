@@ -34,6 +34,10 @@ content itself is written in Russian for the target audience.
   repeatedly. `quiz-builder` needs judgment but no research, so it runs on
   the mid-tier `sonnet`.
 - `.claude/skills/` — reusable skills backing that workflow:
+  - `new-manual` — **the entry point for a brand-new manual.** Orchestrates
+    devops-writer → tech-reviewer → fix loop → quiz-builder → ROADMAP.MD
+    update automatically. Triggers on requests like "напиши мануал про X" /
+    "создай урок по Y" — don't call `devops-writer` directly for those.
   - `manual-template` — the section structure and style rules.
   - `mermaid-diagrams` — house style for Mermaid diagrams used in manuals.
   - `glossary-sync` — how to extract and add new terms to the glossary.
@@ -58,12 +62,20 @@ content itself is written in Russian for the target audience.
 
 ## Workflow for a new manual
 
-1. Check `ROADMAP.MD` for the next topic and its target number/filename.
-2. Use the `devops-writer` agent to draft `manuals/NN-topic-manual.MD`.
-3. Apply the `glossary-sync` skill to add new terms to
-   `glossary/GLOSSARY.MD`.
-4. Use the `tech-reviewer` agent to check the draft against the template,
-   verify Mermaid syntax, and flag inaccurate or outdated claims.
-5. Optionally use the `quiz-builder` agent to generate a companion
-   self-check/lab file next to the manual.
-6. Update the status column for that topic in `ROADMAP.MD`.
+Any request to write/create/add a new manual, lesson, or chapter on a
+DevOps topic should go through the **`new-manual` skill** — don't hand-roll
+the steps below, the skill does them automatically:
+
+1. Resolve topic + number/filename against `ROADMAP.MD`.
+2. `devops-writer` drafts `manuals/NN-topic-manual.MD` (and syncs the
+   glossary itself).
+3. `tech-reviewer` reviews it; if `VERDICT: NEEDS_FIXES`, its `[blocking]`
+   findings go back to `devops-writer` for a targeted fix — repeats up to
+   3 rounds, then stops and surfaces whatever's left rather than looping
+   forever.
+4. `quiz-builder` generates the companion `manuals/NN-topic-quiz.MD`.
+5. `ROADMAP.MD` status is updated (✅ if the review converged, 🚧 with a
+   note if the round cap was hit).
+
+Editing an *existing* manual (expand a section, fix something) doesn't need
+the full pipeline — call `devops-writer` or `tech-reviewer` directly.
