@@ -8,7 +8,7 @@
 | 02 | CI/CD: непрерывная интеграция и доставка | `manuals/02-cicd-manual.MD` | ✅ |
 | 03 | Docker и контейнеризация | `manuals/03-docker-manual.MD` | ✅ |
 | 04 | Kubernetes: основы оркестрации | `manuals/04-kubernetes-manual.MD` | ⬜ |
-| 05 | Git-workflow для команд (trunk-based, GitFlow, PR-процесс) | `manuals/05-git-workflow-manual.MD` | ⬜ |
+| 05 | Git-workflow для команд (trunk-based, GitFlow, PR-процесс) | `manuals/05-git-workflow-manual.MD` | ✅ |
 | 06 | Infrastructure as Code: Terraform и Ansible | `manuals/06-iac-manual.MD` | ⬜ |
 | 07 | Мониторинг и observability (Prometheus, Grafana, логирование) | `manuals/07-monitoring-manual.MD` | ⬜ |
 | 08 | Linux и сети для DevOps | `manuals/08-linux-networking-manual.MD` | ⬜ |
