@@ -1,0 +1,88 @@
+# Сборка и публикация сайта курса на GitHub Pages.
+# Живой пример к урокам 02 (CI/CD) и 05 (Git-workflow для команд):
+#   - на каждый PR и в merge queue сайт собирается в strict-режиме —
+#     это проверка качества (битые ссылки и якоря валят сборку);
+#   - после слияния в main тот же код собирается ещё раз и деплоится.
+# Версии action'ов — актуальные major на 2026-09; в проде пиньте по SHA.
+name: Pages
+
+on:
+  pull_request:
+    branches: [main]
+  # Нужен, если для main включена merge queue: без этого события
+  # обязательная проверка в очереди никогда не запустится
+  merge_group:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  # Фильтр paths: здесь намеренно не используем. Если сделать эту проверку
+  # обязательной (required check), а PR не затронет отфильтрованные пути,
+  # workflow не запустится и PR навсегда застрянет в ожидании статуса.
+
+# Принцип наименьших привилегий: по умолчанию только чтение кода,
+# права на публикацию выдаются отдельно job'у deploy
+permissions:
+  contents: read
+
+# Новый push в тот же PR отменяет устаревшую проверку — экономим минуты CI.
+# Для main не отменяем: каждый коммит в main должен дойти до деплоя.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          # Кэш pip по хешу файла зависимостей: пока он не меняется,
+          # пакеты не скачиваются заново
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-docs.txt
+
+      - name: Prepare sources
+        run: ./scripts/prepare-docs.sh
+
+      - name: Build (strict)
+        run: mkdocs build --strict
+
+      # Артефакт собираем один раз и деплоим именно его (immutable artifact).
+      # На PR он не нужен — там сборка только проверка.
+      - name: Upload Pages artifact
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: build/site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    # Публикуем только из main: PR и merge queue сюда не доходят
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write      # публикация на Pages
+      id-token: write   # OIDC-токен, которым deploy-pages подтверждает, откуда идёт деплой
+    # Environment даёт историю деплоев, ссылку на сайт в интерфейсе
+    # и место для правил защиты (например, ручного approve)
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    # Деплои идут строго по очереди и не прерывают друг друга на полпути
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5

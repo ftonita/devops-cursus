@@ -1,0 +1,65 @@
+# Сайт курса на GitHub Pages: собирается из manuals/, glossary/ и ROADMAP.MD.
+# Исходники в репозитории остаются как есть (.MD), а scripts/prepare-docs.sh
+# перед сборкой копирует их в build/docs с расширением .md — его ждёт MkDocs.
+site_name: DevOps Cursus
+site_description: Учебные материалы по DevOps для менторской программы
+site_url: https://ftonita.github.io/devops-cursus/
+repo_url: https://github.com/ftonita/devops-cursus
+repo_name: ftonita/devops-cursus
+edit_uri: ""
+
+docs_dir: build/docs
+site_dir: build/site
+
+# --strict в CI превращает эти предупреждения в ошибку сборки:
+# битая ссылка на файл или якорь не доедет до production.
+validation:
+  links:
+    not_found: warn
+    anchors: warn
+    unrecognized_links: warn
+
+theme:
+  name: material
+  language: ru
+  features:
+    - navigation.indexes
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Тёмная тема
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Светлая тема
+
+# nav не задаём: MkDocs строит меню сам по структуре build/docs,
+# и новый мануал попадает на сайт без правки этого файла.
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        # Диаграммы из мануалов рендерятся Mermaid прямо на странице
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - toc:
+      permalink: true
+      # Якоря как на GitHub (кириллица сохраняется), иначе ссылки
+      # вида #стратегии-деплоя из оглавлений мануалов не найдутся
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower

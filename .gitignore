@@ -1,0 +1,2 @@
+# Результат сборки сайта (scripts/prepare-docs.sh + mkdocs build)
+build/
