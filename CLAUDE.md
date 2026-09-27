@@ -9,7 +9,7 @@ content itself is written in Russian for the target audience.
 - `manuals/` — numbered manual chapters (`NN-topic-manual.MD`), the actual
   learning content. Written in Russian, one topic per file.
 - `templates/manual-template.MD` — canonical section structure every new
-  manual must follow (mirrors `manuals/01-cicd-manual.MD`).
+  manual must follow (mirrors `manuals/02-cicd-manual.MD`).
 - `glossary/GLOSSARY.MD` — shared glossary of terms introduced across
   manuals. Keep in sync whenever a manual introduces a new term.
 - `ROADMAP.MD` — planned/completed topics with their target manual numbers

@@ -42,6 +42,6 @@ devops-cursus/
 
 ## Мануалы
 
-1. [CI/CD: непрерывная интеграция и доставка](manuals/01-cicd-manual.MD) ✅
+1. [CI/CD: непрерывная интеграция и доставка](manuals/02-cicd-manual.MD) ✅
 
 Остальные темы — см. [ROADMAP.MD](ROADMAP.MD).

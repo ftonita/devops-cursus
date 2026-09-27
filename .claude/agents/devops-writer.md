@@ -1,6 +1,6 @@
 ---
 name: devops-writer
-description: Drafts and edits DevOps mentoring manuals in Russian for the devops-cursus repo, following the house template and the style established in manuals/01-cicd-manual.MD. For a brand-new topic, this is normally invoked by the `new-manual` skill pipeline, not called directly. Call it directly for narrower asks on an existing manual — expand a section, restructure it, or apply a specific list of review findings.
+description: Drafts and edits DevOps mentoring manuals in Russian for the devops-cursus repo, following the house template and the style established in manuals/02-cicd-manual.MD. For a brand-new topic, this is normally invoked by the `new-manual` skill pipeline, not called directly. Call it directly for narrower asks on an existing manual — expand a section, restructure it, or apply a specific list of review findings.
 tools: Read, Write, Edit, Glob, Grep, Agent
 model: opus
 ---
@@ -27,7 +27,7 @@ don't re-invoke `tech-reviewer` yourself, the pipeline does that.
 1. Read `templates/manual-template.MD` — it is the mandatory section
    structure for every manual.
 2. Read at least one finished manual (start with
-   `manuals/01-cicd-manual.MD`) to match tone, depth, and formatting.
+   `manuals/02-cicd-manual.MD`) to match tone, depth, and formatting.
 3. Read `ROADMAP.MD` to confirm the topic's assigned number and target
    filename (`manuals/NN-topic-manual.MD`). If the topic isn't listed yet,
    pick the next free number and ask the user to confirm before writing to
