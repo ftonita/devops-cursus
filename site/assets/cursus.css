@@ -5,7 +5,7 @@
    ========================================================== */
 
 /* ---------- темы: один акцент на тему, остальное общее ---------- */
-.theme-git    { --accent: #d9480f; --accent-soft: #fff3ec; --accent-line: #ffd1b8; }
+.theme-git    { --accent: #c2410c; --accent-soft: #fff3ec; --accent-line: #ffd1b8; }
 .theme-cicd   { --accent: #6d28d9; --accent-soft: #f3eeff; --accent-line: #d8c7fb; }
 .theme-docker { --accent: #1d63ed; --accent-soft: #ebf1fe; --accent-line: #bcd0fb; }
 .theme-flow   { --accent: #0f766e; --accent-soft: #e6f6f4; --accent-line: #a9ded7; }
@@ -16,6 +16,7 @@
 .theme-sec    { --accent: #be123c; --accent-soft: #fff1f2; --accent-line: #fecdd3; }
 .theme-cloud  { --accent: #0369a1; --accent-soft: #e8f5fd; --accent-line: #b6dff5; }
 .theme-sre    { --accent: #b45309; --accent-soft: #fef5e7; --accent-line: #f6d9a8; }
+.dom-ng { --dom: #0b7a43; }
 .theme-git .btn.acc:hover, .theme-cicd .btn.acc:hover, .theme-docker .btn.acc:hover, .theme-flow .btn.acc:hover { filter: brightness(.9); }
 
 /* diff / git подсветка */
@@ -94,7 +95,7 @@ a.btn.acc { color: #fff; }
 .mc .opts button.wrong { border-color: #be123c; background: #fff1f2; }
 .mc .why { display: none; font-size: 16px; color: var(--ink2); border-left: 4px solid var(--accent); padding-left: 12px; }
 .mc.done .why { display: block; }
-.mc .score { font: 700 14px var(--mono); color: var(--mut); }
+.mc .score { font: 700 16px var(--mono); color: var(--mut); }
 
 /* ---------- метрики-табло ---------- */
 .kpis { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }

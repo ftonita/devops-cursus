@@ -24,6 +24,8 @@
 .graph .trunk { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; }
 .graph .dev { fill: none; stroke: #475569; stroke-width: 5; stroke-linecap: round; }
 .graph .br { fill: none; stroke: #64748b; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.graph .hf { fill: none; stroke: #be123c; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.graph .lb.hfl { fill: #9f1239; }
 .graph .cp { fill: none; stroke: #be123c; stroke-width: 3; stroke-dasharray: 7 6; }
 .graph circle { fill: #fff; stroke: var(--accent); stroke-width: 4; }
 .graph .lb { font: 600 16px Inter, system-ui, sans-serif; fill: #334155; }
@@ -57,6 +59,41 @@
 .meter { height: 18px; }
 .meter i { background: var(--accent); }
 .hotwarn { border-left: 4px solid #be123c; background: #fff1f2; border-radius: 10px; padding: 12px 18px; font-size: 19px; }
+/* --- ревью: контраст, иерархия, заполнение пустот --- */
+.dom-ng { --dom: #0a7040; }                       /* kicker на светло-зелёном: 3.97 → ≥ 4.5 */
+.t-com { color: #5b6577; }                         /* комментарии в коде: 2.98 → ≥ 4.5 */
+.hero .stats { flex-direction: column; align-items: stretch; max-width: 460px; }
+.big .pain h3 { font-size: 24px; }
+.big .pain ul { font-size: 21px; }
+.big .pain li { margin: 8px 0; }
+.big .analogy { font-size: 20px; }
+.layers .card { display: flex; flex-direction: column; gap: 4px; }
+.layers .card .tag, .causes .card .tag { align-self: flex-start; }
+.layers .card h3 { font-size: 24px; }
+.layers .card .muted { font-size: 20px; margin: 6px 0 0; }
+.layers .card .small { font-size: 18px; margin-top: auto; padding: 12px 14px; background: var(--dom-soft); border-radius: 12px; color: var(--ink); }
+.layers .callout, .bigc .callout { font-size: 19px; }
+.flags ul { font-size: 18px !important; }
+.pane-lg .pane-text { font-size: 20px; }
+.seg.g2 { display: grid; grid-template-columns: 1fr 1fr; }
+.seg.g2 button { text-align: left; font-size: 16px; padding: 10px 14px; }
+.rp-steps { margin: 6px 0 0; padding-left: 24px; font-size: 18px; color: var(--ink2); line-height: 1.5; }
+.rp-steps li { margin: 6px 0; }
+.causes .card { display: flex; flex-direction: column; gap: 4px; }
+.causes .card h3 { font-size: 24px; }
+.causes .card .muted { font-size: 20px; }
+.causes .card .small { font-size: 18px; margin-top: auto; padding: 12px 14px; background: var(--dom-soft); border-radius: 12px; color: var(--ink); }
+.flip .q .brk { display: block; margin-top: 8px; font-weight: 500; font-size: 16px; color: #9f1239; }
+.qa.anti .flip { min-height: 214px; }
+.qa.anti .flip .q { font-size: 20px; }
+.flip .q .brk b { font-weight: 700; }
+.qa.anti .flip .a, .qa.two .flip .a { font-size: 17px; }
+body.flow .strat-grid, body.flow .pm, body.flow .seg.g2, body.flow .qa.two { grid-template-columns: 1fr; }
+body.flow .seg { display: flex; flex-wrap: wrap; }
+body.flow .seg button code { white-space: normal; overflow-wrap: anywhere; }
+body.flow .vrow { flex-wrap: wrap; font-size: 36px; row-gap: 8px; }
+body.flow .vrow .vtag { margin-left: 0; }
+body.flow .hero .stats { max-width: none; }
 </style>
 </head>
 <body class="theme-flow">
@@ -65,7 +102,7 @@
 <main class="deck" id="deck">
 
 <!-- ======================= 01 ТИТУЛ ======================= -->
-<section data-title="Git-workflow: титул">
+<section data-title="Git-workflow: титул" class="dom-gr">
   <div class="sh"><div class="kicker"><span class="n"></span>Тема 05 · Git-workflow для команд</div></div>
   <div class="hero">
     <div>
@@ -80,7 +117,7 @@
     <div class="stats">
       <div class="stat"><b>4</b><span>слоя workflow, а не одна «ветка»</span></div>
       <div class="stat"><b>≤ 3</b><span>активных веток: критерий DORA для trunk-based</span></div>
-      <div class="stat"><b>1</b><span>метод слияния на репозиторий</span></div>
+      <div class="stat"><b>0</b><span>PR, влитых в main без review: цель, которую держит платформа</span></div>
     </div>
   </div>
   <div class="hint"><kbd>→</kbd> далее · <kbd>F</kbd> полный экран · <kbd>P</kbd> режим докладчика · <kbd>M</kbd> меню</div>
@@ -90,7 +127,7 @@
 </section>
 
 <!-- ======================= 02 БОЛЬ → РЕШЕНИЕ ======================= -->
-<section data-title="Зачем это нужно" class="dom-fw">
+<section data-title="Зачем это нужно" class="dom-fw big">
   <div class="sh">
     <div class="kicker"><span class="n"></span>Зачем</div>
     <h2>Без договорённости main становится полем боя</h2>
@@ -102,26 +139,27 @@
       <div class="arrow">→</div>
       <div class="now"><h3>😌 С согласованным workflow</h3><ul><li>Изменения маленькие и вливаются в main ежедневно</li><li>Проверки и одобрения гарантирует платформа, а не честное слово</li><li>main всегда зелёный, из него выпускается релиз</li><li>Срочный fix идёт по заранее отрепетированному пути</li></ul></div>
     </div>
-    <div class="analogy" style="margin-top:12px"><span class="ai">💡</span><div><span class="al">Аналогия</span>Git — это дорога без светофора и разметки: ехать можно куда угодно, но столкновения неизбежны. Workflow и есть светофор, только вешаете его вы в настройках платформы.</div></div>
+    <div class="analogy" style="margin-top:18px"><span class="ai">💡</span><div><span class="al">Аналогия</span>Git — это дорога без светофора и разметки: ехать можно куда угодно, но столкновения неизбежны. Workflow и есть светофор, только вешаете его вы в настройках платформы.</div></div>
+    <div class="callout" style="margin-top:14px">Даже автор GitFlow Винсент Дриссен в 2020 году дописал к своей статье: для непрерывно доставляемого веб-софта лучше модели проще, вроде GitHub Flow. Выбор workflow — инженерное решение, а не традиция.</div>
   </div>
   <aside class="notes"><p>Пройдитесь по левой колонке и спросите зал, какая из четырёх проблем знакома. Правая колонка — не список пожеланий, а то, что дают правила платформы. Подчеркните: «честное слово» заменяется техническим ограничением.</p></aside>
 </section>
 
 <!-- ======================= 03 ЧЕТЫРЕ СЛОЯ ======================= -->
-<section data-title="Четыре слоя workflow" class="dom-gr">
+<section data-title="Четыре слоя workflow" class="dom-gr layers">
   <div class="sh">
     <div class="kicker"><span class="n"></span>Модель</div>
     <h2>Workflow — это четыре слоя, и путать их не надо</h2>
     <p class="lede">У каждого слоя свой вопрос. Ответ на один не отвечает на другой.</p>
   </div>
   <div class="body col">
-    <div class="grid g4">
+    <div class="grid g4" style="height:360px">
       <div class="card"><span class="tag">вопрос 1</span><h3 style="margin-top:10px">Стратегия ветвления</h3><p class="muted">Какие ветки есть и сколько живут?</p><p class="small"><b>Пример:</b> только main и ветки на 1–2 дня.</p></div>
       <div class="card"><span class="tag">вопрос 2</span><h3 style="margin-top:10px">Процесс интеграции</h3><p class="muted">Как изменение попадает в main?</p><p class="small"><b>Пример:</b> PR, 1 approval от CODEOWNERS, зелёный CI, merge queue.</p></div>
       <div class="card"><span class="tag">вопрос 3</span><h3 style="margin-top:10px">Метод слияния</h3><p class="muted">Какой след оставляет изменение в истории?</p><p class="small"><b>Пример:</b> squash, заголовок PR в формате Conventional Commits.</p></div>
       <div class="card"><span class="tag">вопрос 4</span><h3 style="margin-top:10px">Релизный процесс</h3><p class="muted">Как из истории получается версия?</p><p class="small"><b>Пример:</b> тег vX.Y.Z и changelog, сгенерированный из коммитов.</p></div>
     </div>
-    <div class="callout">Метод слияния — не стратегия ветвления. Trunk-based и squash-merge прекрасно совместимы: решения независимы, хотя и влияют друг на друга.</div>
+    <div class="callout">Метод слияния — не стратегия ветвления. Trunk-based и squash-merge прекрасно совместимы: решения независимы, хотя и влияют друг на друга. <b>Workflow — не про Git, а про договорённость людей, закреплённую в настройках платформы.</b></div>
   </div>
   <aside class="notes"><p>Главная мысль слайда: слои не надо смешивать. Если кто-то спорит «у нас GitFlow», спросите, какой слой он имеет в виду. Пример на четвёртом слое пригодится на слайде про релизы.</p></aside>
 </section>
@@ -184,7 +222,7 @@
           <h3>GitHub Flow</h3>
           <div class="pm">
             <div class="plus"><h4>Плюсы</h4><ul><li>Одно правило: всё в main можно деплоить</li><li>Простой дефолт без лишних веток</li><li>Hotfix — обычный PR с приоритетом</li></ul></div>
-            <div class="minus"><h4>Минусы</h4><ul><li>Незаконченная работа чаще держится в ветке</li><li>Ветки легко зажить на недели</li></ul></div>
+            <div class="minus"><h4>Минусы</h4><ul><li>Незаконченная работа чаще держится в ветке</li><li>Ветку легко затянуть на недели</li></ul></div>
           </div>
           <p class="fit"><b>Подходит:</b> веб-сервисы, небольшие и средние команды.</p>
         </div>
@@ -193,18 +231,20 @@
 
     <div class="card" data-pane="gf" data-group="strat" hidden>
       <div class="strat-grid">
-        <svg class="graph" viewBox="0 0 600 260" role="img" aria-label="GitFlow: main, develop, feature, release и hotfix ветки">
+        <svg class="graph" viewBox="0 0 600 270" role="img" aria-label="GitFlow: main, develop, feature, release и hotfix ветки; hotfix вливается и в main, и в develop">
           <line class="trunk" x1="30" y1="70" x2="580" y2="70"/>
           <line class="dev" x1="30" y1="170" x2="580" y2="170"/>
-          <path class="br" d="M110 170 L130 240 L230 240 L250 170"/>
-          <path class="br" d="M340 170 L360 120 L470 120 L490 70"/>
-          <circle cx="60" cy="70" r="8"/><circle cx="300" cy="70" r="8"/><circle cx="500" cy="70" r="10" style="fill:var(--accent)"/>
-          <circle cx="60" cy="170" r="8"/><circle cx="130" cy="170" r="8"/><circle cx="250" cy="170" r="8"/><circle cx="340" cy="170" r="8"/><circle cx="420" cy="170" r="8"/><circle cx="560" cy="170" r="8"/>
+          <path class="br" d="M90 170 L110 235 L210 235 L230 170"/>
+          <path class="br" d="M380 170 L400 120 L480 120 L500 70"/>
+          <path class="hf" d="M250 70 L265 112 L320 112 L335 70"/>
+          <path class="hf" d="M320 112 L340 170"/>
+          <circle cx="60" cy="70" r="8"/><circle cx="250" cy="70" r="8"/><circle cx="335" cy="70" r="10" style="fill:var(--accent)"/><circle cx="500" cy="70" r="10" style="fill:var(--accent)"/>
+          <circle cx="60" cy="170" r="8"/><circle cx="110" cy="170" r="8"/><circle cx="230" cy="170" r="8"/><circle cx="340" cy="170" r="8"/><circle cx="380" cy="170" r="8"/><circle cx="560" cy="170" r="8"/>
           <text class="lb acc" x="30" y="52">main: только релизы, теги</text>
-          <text class="lb" x="30" y="150">develop: интеграция</text>
-          <text class="lb" x="262" y="222">feature/*</text>
-          <text class="lb" x="372" y="108">release/*</text>
-          <text class="lb" x="330" y="252">hotfix/*: в main и develop</text>
+          <text class="lb" x="30" y="200">develop</text>
+          <text class="lb" x="118" y="258">feature/*</text>
+          <text class="lb" x="408" y="108">release/*</text>
+          <text class="lb hfl" x="262" y="136">hotfix/*</text>
         </svg>
         <div>
           <h3>GitFlow</h3>
@@ -233,18 +273,19 @@
           <h3>Release branches</h3>
           <div class="pm">
             <div class="plus"><h4>Плюсы</h4><ul><li>Поддержка нескольких версий параллельно</li><li>Новые фичи не попадают в поддерживаемые ветки</li></ul></div>
-            <div class="minus"><h4>Минусы</h4><ul><li>Каждый fix переносится cherry-pick'ом</li><li>Ветка никогда не вливается обратно в main</li></ul></div>
+            <div class="minus"><h4>Минусы</h4><ul><li>Каждый fix переносится cherry&#8209;pick'ом</li><li>Ветка никогда не вливается обратно в main</li></ul></div>
           </div>
           <p class="fit"><b>Подходит:</b> мобильные приложения (ревью в сторе занимает дни), on-premise, библиотеки с LTS.</p>
         </div>
       </div>
     </div>
+    <div class="callout"><b>Как выбрать:</b> деплоите каждый день — trunk-based или GitHub Flow; поддерживаете несколько версий параллельно — release branches; GitFlow оставьте для явно версионируемого ПО с релизами по расписанию.</div>
   </div>
   <aside class="notes"><p>Дайте участникам 30 секунд: пусть сами нажмут все четыре вкладки. Ключевой вопрос к залу: «Что вы выберете для веб-сервиса с деплоем каждый день?» Главная ось сравнения — сколько долгоживущих веток и как долго изменение живёт отдельно от main.</p></aside>
 </section>
 
 <!-- ======================= 05 ДЕПЛОЙ ≠ РЕЛИЗ ======================= -->
-<section data-title="Деплой и релиз: флаг их разводит" class="dom-id">
+<section data-title="Деплой и релиз: флаг их разводит" class="dom-id flags bigc">
   <div class="sh">
     <div class="kicker"><span class="n"></span>Незаконченная работа</div>
     <h2>Деплой и релиз — разные события, и их разводит feature flag</h2>
@@ -252,14 +293,14 @@
   </div>
   <div class="body split">
     <div class="l">
-      <div class="card"><h3>Деплой: техническое событие</h3><p class="muted">Новая версия кода запущена в production.</p></div>
-      <div class="card"><h3>Релиз: продуктовое событие</h3><p class="muted">Пользователи реально получили новую функциональность.</p></div>
+      <div class="card"><h3>🚚 Деплой: техническое событие</h3><p class="muted">Новая версия кода запущена в production. Решает инженер, можно хоть каждый час.</p></div>
+      <div class="card"><h3>🎉 Релиз: продуктовое событие</h3><p class="muted">Пользователи реально получили новую функциональность. Решает продукт: переключателем флага, без нового деплоя.</p></div>
       <div class="analogy"><span class="ai">💡</span><div><span class="al">Аналогия</span>Дом построен и подключён к сетям (деплой), но въехать можно, когда открыли подъезд (релиз).</div></div>
     </div>
     <div class="r">
       <div class="card">
         <h3>Типы флагов и срок жизни</h3>
-        <ul class="small" style="margin:8px 0 0;padding-left:22px;line-height:1.6">
+        <ul style="margin:10px 0 0;padding-left:22px;line-height:1.55">
           <li><b>Release toggle</b>: скрыть незаконченное, включить готовое. Дни–недели, потом удалить.</li>
           <li><b>Experiment toggle</b>: A/B-тест. Живёт, пока идёт эксперимент.</li>
           <li><b>Ops toggle (kill switch)</b>: быстро отключить рискованную функцию при инциденте. Может жить долго.</li>
@@ -273,7 +314,7 @@
 </section>
 
 <!-- ======================= 06 ИНТЕРАКТИВ: ПУТЬ ИЗМЕНЕНИЯ ======================= -->
-<section data-title="Интерактив: путь до production" class="dom-gr">
+<section data-title="Интерактив: путь до production" class="dom-gr pane-lg bigc">
   <div class="sh">
     <div class="kicker"><span class="n"></span>Путь изменения</div>
     <h2>От задачи до production: нажмите на этап</h2>
@@ -294,6 +335,7 @@
     <div class="card" data-pane="checks" data-group="path" hidden><h3>Проверки и review</h3><p class="pane-text">CI запускает lint, тесты и commitlint. CODEOWNERS назначает владельцев путей. Человек смотрит на логику, архитектуру и риски, а не на отступы.</p><p class="pane-text"><b>Если пропустить:</b> обязательные проверки перестают быть техническим ограничением.</p></div>
     <div class="card" data-pane="queue" data-group="path" hidden><h3>Merge queue</h3><p class="pane-text">Одобренные PR встают в очередь. Платформа проверяет каждый на временной ветке «main + этот PR + впереди стоящие» и вливает, только если CI зелёный.</p><p class="pane-text"><b>Зачем:</b> «зелёный PR + зелёный PR = красный main» перестаёт случаться.</p></div>
     <div class="card" data-pane="prod" data-group="path" hidden><h3>main всегда зелёный, и CD забирает каждый коммит</h3><p class="pane-text">Незаконченная фича уже в production, но выключена флагом: деплой есть, релиза нет. Так работает CD из мануала 02-cicd.</p><p class="pane-text"><b>Вывод:</b> изменение доходит до пользователей за дни, а не за недели ветки.</p></div>
+    <div class="callout">Весь путь от задачи до production — это <b>Lead Time for Changes</b> из DORA. Отрезок от открытия PR до main — <b>PR cycle time</b>: его вы и сокращаете маленькими PR и быстрым review.</div>
   </div>
   <aside class="notes"><p>Нажимайте этапы слева направо и спрашивайте: «На каком этапе у вас сейчас простой?» Обратите внимание: на каждом шаге есть «что будет, если пропустить». Это и есть доводы для команды.</p></aside>
 </section>
@@ -350,8 +392,9 @@
     <h2>Версию и changelog считает история, а не человек в конце спринта</h2>
     <p class="lede">Выберите тип коммита из главной ветки: версия по SemVer пересчитается сама.</p>
   </div>
-  <div class="body col">
-    <div class="seg" data-group="commit" aria-label="Тип коммита">
+  <div class="body split">
+   <div class="l">
+    <div class="seg g2" data-group="commit" aria-label="Тип коммита">
       <button data-tab="fix" data-default><code>fix(api): handle empty list</code></button>
       <button data-tab="feat"><code>feat(auth): add OAuth login</code></button>
       <button data-tab="brk"><code>feat(api)!: drop v1 endpoints</code></button>
@@ -373,31 +416,43 @@
       <div class="vrow"><span class="vold">1.4.2</span><span>→</span><span class="vnew">1.4.2</span><span class="tag vtag">без изменений</span></div>
       <p class="pane-text">Служебные изменения (chore, docs, refactor, test, ci) версию обычно не меняют.</p>
     </div>
-    <div class="callout">Тег, changelog и номер версии создаёт автоматика (release-please, semantic-release, git-cliff). Они не расходятся, потому что собраны из одной истории коммитов.</div>
+    <div class="callout">Тип коммита важнее его размера: однострочный <code class="i">feat!</code> поднимает MAJOR, а огромный <code class="i">refactor</code> обычно не меняет её вовсе.</div>
+   </div>
+   <div class="r">
+    <div class="card">
+      <h3>Как это делает release-please</h3>
+      <ol class="rp-steps">
+        <li>После каждого push в main читает коммиты с последнего релиза и открывает <b>релизный PR</b>: новая версия + обновлённый <code class="i">CHANGELOG.md</code>.</li>
+        <li>Команда вливает релизный PR, когда хочет выпустить версию. Это ручные ворота Continuous Delivery в виде обычного PR.</li>
+        <li>После слияния создаётся тег <code class="i">vX.Y.Z</code> и GitHub Release, тег запускает релизный пайплайн.</li>
+      </ol>
+    </div>
+    <div class="callout">Тег, changelog и версия не расходятся, потому что собраны из одной истории коммитов. Аналоги: semantic-release, changesets, git-cliff.</div>
+   </div>
   </div>
   <aside class="notes"><p>Переключайте типы коммитов по очереди. Спросите: «Какой коммит поднимет MAJOR?» Ответ: только несовместимое изменение, и его можно обозначить либо «!», либо футером. Тип коммита здесь важнее его размера.</p></aside>
 </section>
 
 <!-- ======================= 09 КОНФЛИКТЫ ======================= -->
-<section data-title="Конфликты: откуда берутся" class="dom-dk">
+<section data-title="Конфликты: откуда берутся" class="dom-dk causes bigc">
   <div class="sh">
     <div class="kicker"><span class="n"></span>Конфликты</div>
     <h2>Тяжёлые конфликты рождаются из долгих веток и больших правок</h2>
     <p class="lede">Команда не может отменить конфликты, но может сделать их маленькими и редкими.</p>
   </div>
   <div class="body col">
-    <div class="grid g3">
+    <div class="grid g3" style="height:350px">
       <div class="card"><span class="tag">причина 1</span><h3 style="margin-top:10px">Долгоживущие ветки</h3><p class="muted">Расхождение с main растёт каждый день, а сложность слияния растёт быстрее линейной.</p><p class="small"><b>Лекарство:</b> ежедневная синхронизация с main и интеграция в main.</p></div>
       <div class="card"><span class="tag">причина 2</span><h3 style="margin-top:10px">Массовые механические правки</h3><p class="muted">Переименование или автоформатирование всего проекта, сделанное параллельно с работой.</p><p class="small"><b>Лекарство:</b> отдельный PR с анонсом и <code class="i">.git-blame-ignore-revs</code>.</p></div>
       <div class="card"><span class="tag">причина 3</span><h3 style="margin-top:10px">Горячие файлы</h3><p class="muted">Общий конфиг, реестр роутов, файл зависимостей, который правят все.</p><p class="small"><b>Лекарство:</b> регистрация через каталоги и автообнаружение вместо одного общего списка.</p></div>
     </div>
-    <div class="callout"><b>Полезный инструмент:</b> <code class="i">git rerere</code> запоминает, как вы разрешили конфликт, и при повторном таком же применяет решение сам. Включается через <code class="i">rerere.enabled true</code>.</div>
+    <div class="callout"><b>Полезный инструмент:</b> <code class="i">git rerere</code> запоминает, как вы разрешили конфликт, и при повторном таком же применяет решение сам. Включается командой <code class="i">git config --global rerere.enabled true</code>.</div>
   </div>
   <aside class="notes"><p>Здесь уместно спросить зал, у кого был «merge hell» на неделю. Почти всегда причина в одной из трёх строк карточек. Подчеркните: если долгая ветка уже есть, её надо синхронизировать с main минимум раз в день, а не ждать финального слияния.</p></aside>
 </section>
 
 <!-- ======================= 10 ИНТЕРАКТИВ: HOTFIX-СЦЕНАРИЙ ======================= -->
-<section data-title="Интерактив: hotfix по шагам" class="dom-ng">
+<section data-title="Интерактив: hotfix по шагам" class="dom-ng pane-lg bigc">
   <div class="sh">
     <div class="kicker"><span class="n"></span>Hotfix</div>
     <h2>Hotfix: сначала в main, потом cherry-pick в релизную ветку</h2>
@@ -411,7 +466,7 @@
       <button class="sr" data-tab="s4"><span class="si">⚠️</span><b>Ловушка</b><span>fix только в релизе</span></button>
     </div>
     <div class="card" data-pane="s1" data-group="hf">
-      <script type="text/x-code" data-lang="bash" data-title="main" data-cls="sm">
+      <script type="text/x-code" data-lang="bash" data-title="main">
         git switch main
         git pull --ff-only
         git log --oneline -1
@@ -419,7 +474,7 @@
       <p class="pane-text">Fix уже влит в main через обычный PR. Здесь нельзя «поправить на сервере»: иначе следующий релиз вернёт баг.</p>
     </div>
     <div class="card" data-pane="s2" data-group="hf" hidden>
-      <script type="text/x-code" data-lang="bash" data-title="release/1.4" data-cls="sm">
+      <script type="text/x-code" data-lang="bash" data-title="release/1.4">
         git switch release/1.4
         git pull --ff-only
         git cherry-pick -x 3f9c2ab
@@ -428,7 +483,7 @@
       <p class="pane-text"><code class="i">-x</code> дописывает в сообщение строку «cherry picked from commit», и по ней видно, откуда пришло изменение. Если ветка защищена, пуш делается через PR.</p>
     </div>
     <div class="card" data-pane="s3" data-group="hf" hidden>
-      <script type="text/x-code" data-lang="bash" data-title="tag" data-cls="sm">
+      <script type="text/x-code" data-lang="bash" data-title="tag">
         git tag -a v1.4.3 -m "fix(payments): retry on timeout"
         git push origin v1.4.3
       </script>
@@ -438,6 +493,7 @@
       <div class="hotwarn"><b>Что ломается:</b> fix сделан только в release/1.4 и выкачен в прод. Через месяц плановый релиз собирается из main, а в main этого fix'а не было никогда. Баг возвращается.</div>
       <p class="pane-text"><b>Как правильно:</b> сначала main, потом cherry-pick вниз. Порядок «upstream first» исключает саму возможность такой регрессии.</p>
     </div>
+    <div class="callout">Путь зависит от стратегии. <b>Trunk-based / GitHub Flow:</b> hotfix — обычный PR в main с приоритетным review. <b>GitFlow:</b> ветка <code class="i">hotfix/*</code> от main вливается и в main (с тегом PATCH), и в develop.</div>
   </div>
   <aside class="notes"><p>Пройдите шаги 1–3 как рецепт, а на шаге 4 остановитесь и спросите зал, что случится в следующем релизе. Порядок «main, потом cherry-pick» — главный вывод слайда. Hotfix не отменяет защиту веток: для срочного случая нужен быстрый путь review, а не обход.</p></aside>
 </section>
@@ -446,16 +502,16 @@
 <section data-title="Антипаттерны: что ломается" class="dom-id">
   <div class="sh">
     <div class="kicker"><span class="n"></span>Ошибки</div>
-    <h2>Что ломается и как правильно: нажмите на карточку</h2>
-    <p class="lede">Шесть ошибок, которые встречаются почти в каждой команде.</p>
+    <h2>Шесть ошибок, которые ломают workflow почти в каждой команде</h2>
+    <p class="lede">На карточке — что ломается. Сначала угадайте решение, потом нажмите.</p>
   </div>
-  <div class="qa">
-    <button class="flip" aria-expanded="false"><span class="q">Долгоживущие feature-ветки «до готовности»</span><span class="a"><b>Как правильно:</b> короткие ветки, незаконченное за флагом, branch by abstraction.</span><span class="tap">показать, как правильно →</span></button>
-    <button class="flip" aria-expanded="false"><span class="q">PR на тысячи строк</span><span class="a"><b>Как правильно:</b> рефакторинг отдельно от поведения, stacked PRs, ориентир 200–400 строк.</span><span class="tap">показать, как правильно →</span></button>
-    <button class="flip" aria-expanded="false"><span class="q">Админ может обойти защиту «на всякий случай»</span><span class="a"><b>Как правильно:</b> rulesets без исключений; для срочного — быстрый путь review, а не обход.</span><span class="tap">показать, как правильно →</span></button>
-    <button class="flip" aria-expanded="false"><span class="q">Approve остаётся после новых коммитов</span><span class="a"><b>Как правильно:</b> Dismiss stale approvals и Require approval of the most recent push.</span><span class="tap">показать, как правильно →</span></button>
-    <button class="flip" aria-expanded="false"><span class="q">Обязательный job с фильтром по путям не запускается</span><span class="a"><b>Как правильно:</b> фильтровать шаги внутри job или завести итоговый job, который всегда отчитывается.</span><span class="tap">показать, как правильно →</span></button>
-    <button class="flip" aria-expanded="false"><span class="q">Hotfix только в релизной ветке или на сервере</span><span class="a"><b>Как правильно:</b> fix в main, затем cherry-pick -x в релиз; деплой только из Git.</span><span class="tap">показать, как правильно →</span></button>
+  <div class="qa anti">
+    <button class="flip" aria-expanded="false"><span class="q">Долгоживущие feature-ветки «до готовности»<span class="brk"><b>Ломается:</b> Merge hell, конфликты на дни, интеграционные баги находятся в самом конце.</span></span><span class="a"><b>Как правильно:</b> короткие ветки, незаконченное за флагом, branch by abstraction.</span><span class="tap">показать, как правильно →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">PR на тысячи строк<span class="brk"><b>Ломается:</b> Review формальный («LGTM»), баги проходят, откат затрагивает всё сразу.</span></span><span class="a"><b>Как правильно:</b> рефакторинг отдельно от поведения, stacked PRs, ориентир 200–400 строк.</span><span class="tap">показать, как правильно →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Админ может обойти защиту «на всякий случай»<span class="brk"><b>Ломается:</b> Прямые push в main в обход CI и review — обычно в самый стрессовый момент.</span></span><span class="a"><b>Как правильно:</b> rulesets без исключений; для срочного — быстрый путь review, а не обход.</span><span class="tap">показать, как правильно →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Approve остаётся после новых коммитов<span class="brk"><b>Ломается:</b> Одобрили один код, влили другой.</span></span><span class="a"><b>Как правильно:</b> Dismiss stale approvals и Require approval of the most recent push.</span><span class="tap">показать, как правильно →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Обязательный CI-job с фильтром по путям<span class="brk"><b>Ломается:</b> Job не запустился, и PR навсегда «ждёт» его статуса.</span></span><span class="a"><b>Как правильно:</b> фильтровать шаги внутри job или завести итоговый job, который всегда отчитывается.</span><span class="tap">показать, как правильно →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Hotfix только в релизной ветке или на сервере<span class="brk"><b>Ломается:</b> Следующий релиз возвращает баг, production расходится с Git.</span></span><span class="a"><b>Как правильно:</b> fix в main, затем cherry-pick -x в релиз; деплой только из Git.</span><span class="tap">показать, как правильно →</span></button>
   </div>
   <aside class="notes"><p>Дайте участникам по карточке, пусть сами угадают решение, и только потом откройте. Последняя карточка связана с предыдущим слайдом. Если в команде узнали себя хотя бы в одной ошибке, это уже хороший повод для ретроспективы.</p></aside>
 </section>
@@ -487,7 +543,7 @@
           <div class="meter-row"><div class="meter"><i style="width:30%"></i></div><span class="small muted">внимание на уровне нормы</span></div>
         </div>
         <div class="card" data-pane="s400" data-group="size" hidden>
-          <h3>Ещё можно проверить, но уже за время</h3>
+          <h3>Проверить ещё можно, но review затягивается</h3>
           <p class="pane-text">Ревьюер начинает уставать, review тянется дольше.</p>
           <div class="meter-row"><div class="meter"><i style="width:65%;background:#b45309"></i></div><span class="small muted">внимание начинает падать</span></div>
         </div>
@@ -511,26 +567,42 @@
   <div class="sh">
     <div class="kicker"><span class="n"></span>Практика</div>
     <h2>Защиту main храните как код: её видно на review и её нельзя «забыть»</h2>
-    <p class="lede">Нажимайте блоки кода или листайте стрелкой: подсвечивается нужный фрагмент и пояснение справа.</p>
+    <p class="lede">Листайте стрелкой или нажимайте на блоки: подсвечивается фрагмент ruleset и пояснение справа.</p>
   </div>
   <div class="body split">
     <div class="l">
-      <script type="text/x-code" data-lang="bash" data-title="terminal" data-cls="grow">
-        #@ruleset
-        gh api --method POST repos/acme/checkout-service/rulesets --input main-protection.json
-        #@verify
-        gh api repos/acme/checkout-service/rulesets
-        #@names
-        # имена required checks совпадают с именами job'ов в CI
+      <script type="text/x-code" data-lang="text" data-title="main-protection.json" data-cls="sm">
+        #@target
+        { "name": "main-protection", "target": "branch",
+          "enforcement": "active",
+          "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"] } },
+          "rules": [
+        #@pr
+            { "type": "non_fast_forward" }, { "type": "required_linear_history" },
+            { "type": "pull_request", "parameters": {
+                "required_approving_review_count": 1,
+                "dismiss_stale_reviews_on_push": true,
+                "require_last_push_approval": true } },
+        #@checks
+            { "type": "required_status_checks", "parameters": {
+                "required_status_checks": [ { "context": "test" } ] } } ] }
+      </script>
+      <script type="text/x-code" data-lang="bash" data-title="terminal" data-cls="sm">
+        #@apply
+        gh api --method POST repos/acme/checkout-service/rulesets \
+          --input main-protection.json
+        gh api repos/acme/checkout-service/rulesets   # проверить, что действует
       </script>
     </div>
     <div class="r viz">
-      <div class="ent dom-us" data-k="ruleset"><div class="ei">1</div><div><div class="et">Ruleset</div><div class="ed">PR обязателен, 1 approval, сброс старых approve, linear history: JSON в репозитории.</div></div></div>
-      <div class="ent dom-us" data-k="verify"><div class="ei">2</div><div><div class="et">Проверка</div><div class="ed">API показывает, что правило действует, а не только описано в wiki.</div></div></div>
-      <div class="ent dom-us" data-k="names"><div class="ei">3</div><div><div class="et">Имена проверок</div><div class="ed">Если не совпадут, required check никогда не отчитается и PR зависнет.</div></div></div>
+      <div class="ent dom-us" data-k="target"><div class="ei">1</div><div><div class="et">Куда применять</div><div class="ed"><code class="i">~DEFAULT_BRANCH</code>: правило следует за веткой по умолчанию, даже если её переименуют.</div></div></div>
+      <div class="ent dom-us" data-k="pr"><div class="ei">2</div><div><div class="et">Без обходных путей</div><div class="ed">Запрет force push, linear history, PR с 1 approval; новые коммиты сбрасывают approve, последний push тоже нужно одобрить.</div></div></div>
+      <div class="ent dom-us" data-k="checks"><div class="ei">3</div><div><div class="et">Обязательные проверки</div><div class="ed">Имена должны точно совпадать с именами job'ов в CI. Не совпадут — проверка никогда не отчитается, и PR зависнет.</div></div></div>
+      <div class="ent dom-us" data-k="apply"><div class="ei">4</div><div><div class="et">Применить и проверить</div><div class="ed">Нужны права администратора репозитория. API показывает, что правило действует, а не только описано в wiki.</div></div></div>
+      <div class="callout">Настройки мышкой не видны на review и не переносятся на другой репозиторий. JSON — виден, одинаков везде и восстанавливается, если кто-то поменял руками.</div>
     </div>
   </div>
-  <aside class="notes"><p>Пройдите три шага стрелкой. Главная мысль: правила в JSON видны на review и одинаковы во всех репозиториях. Для одного сервиса хватит мышки, но с ростом команды настройки должны переехать в код.</p></aside>
+  <aside class="notes"><p>Пройдите четыре шага стрелкой. Главная мысль: правила в JSON видны на review и одинаковы во всех репозиториях. Фрагмент сокращён, полный ruleset — в примере 2 мануала. Для одного сервиса хватит мышки, но с ростом команды настройки должны переехать в код.</p></aside>
 </section>
 
 <!-- ======================= 14 ТЕСТ .mc ======================= -->
@@ -572,7 +644,7 @@
     <p class="lede">Проверьте себя на вопросах, а ответ откройте только после попытки.</p>
   </div>
   <div class="qa two">
-    <button class="flip" aria-expanded="false"><span class="q">Чем Trunk-based отличается от GitFlow?</span><span class="a">Числом долгоживущих веток. TBD держит только main, GitFlow — main, develop и ветки релизов. Каждая лишняя ветка означает отложенную интеграцию.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Чем Trunk-based отличается от GitFlow?</span><span class="a">Числом долгоживущих веток. В TBD она одна — main, в GitFlow две — main и develop, плюс ветки feature, release и hotfix. Каждая лишняя ветка откладывает интеграцию.</span><span class="tap">показать ответ →</span></button>
     <button class="flip" aria-expanded="false"><span class="q">В чём разница между деплоем и релизом?</span><span class="a">Деплой — код запущен в production. Релиз — пользователи получили функцию. Их разводит feature flag.</span><span class="tap">показать ответ →</span></button>
     <button class="flip" aria-expanded="false"><span class="q">Какие три критерия DORA для trunk-based?</span><span class="a">Не больше трёх активных веток; ветки вливаются в trunk минимум раз в день; нет code freeze и отдельных фаз интеграции.</span><span class="tap">показать ответ →</span></button>
     <button class="flip" aria-expanded="false"><span class="q">Почему hotfix сначала делают в main?</span><span class="a">Иначе следующий релиз, собранный из main, вернёт баг. Порядок: fix в main, затем cherry-pick -x в релизную ветку.</span><span class="tap">показать ответ →</span></button>

@@ -25,7 +25,7 @@
   var changed = { src: false, pkg: false };
   var badOrder = false;
 
-  var box = $("lyrs"), cnt = $("ctorCount"), note = $("ctorNote");
+  var box = $("lyrs"), cnt = $("ctorCount"), tm = $("ctorTime"), note = $("ctorNote");
   var edSrc = $("edSrc"), edPkg = $("edPkg"), ordSw = $("ordSw"), resetB = $("rsB");
 
   function calc(arr) {
@@ -41,7 +41,7 @@
   function render() {
     var rows = calc(badOrder ? BAD : GOOD);
     box.innerHTML = rows.map(function (r, i) {
-      return '<div class="lyr ' + (r.miss ? "miss" : "hit") + '">' +
+      return '<div role="listitem" class="lyr ' + (r.miss ? "miss" : "hit") + '">' +
         '<span class="ix">' + (i + 1) + '</span>' +
         '<code>' + r.t + '</code>' +
         (r.slow ? '<span class="tg">долго</span>' : '<span></span>') +
@@ -49,13 +49,17 @@
     }).join("");
 
     var rebuilt = rows.filter(function (r) { return r.miss; }).length;
-    cnt.textContent = "Пересобрано слоёв: " + rebuilt + " из " + rows.length;
+    cnt.textContent = rebuilt + " из " + rows.length;
 
     var slow = rows.filter(function (r) { return r.slow; })[0];
+    /* Оценки из мануала: правка кода при верном порядке ~10 с, пересборка npm ci ~2–3 мин */
+    var slowMiss = !!(slow && slow.miss);
+    tm.textContent = !rebuilt ? "мгновенно" : slowMiss ? "≈ 2–3 мин" : "≈ 10 с";
+    tm.className = slowMiss ? "slow" : "";
     if (!changed.src && !changed.pkg) {
       note.textContent = "Ничего не менялось: весь образ берётся из кэша.";
     } else if (slow && slow.miss) {
-      note.textContent = "npm ci пересобран: по мануалу это минуты, а не секунды.";
+      note.textContent = "npm ci пересобран: зависимости ставятся заново на каждую сборку.";
     } else {
       note.textContent = "npm ci взят из кэша: пересобрались только слои ниже правки.";
     }
@@ -71,4 +75,34 @@
   resetB.onclick = function () { changed.src = false; changed.pkg = false; badOrder = false; render(); };
 
   render();
+
+  /* Подсветка Dockerfile. Общий hlDocker в deck.js оборачивает инструкцию в <span class="t-mod">,
+     а затем регэксп строк ловит кавычки атрибута и ломает разметку. Поэтому блоки объявлены
+     как data-lang="text" и подсвечиваются здесь: сначала строки, потом инструкции. */
+  function esc(t) { return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function hlDocker(l) {
+    if (/^\s*#/.test(l)) return '<span class="t-com">' + esc(l) + "</span>";
+    return esc(l)
+      .replace(/("[^"]*")/g, '<span class="t-str">$1</span>')
+      .replace(/^(\s*)(FROM|RUN|CMD|COPY|ADD|WORKDIR|ENV|ARG|EXPOSE|USER|ENTRYPOINT|HEALTHCHECK|VOLUME|LABEL)\b/, '$1<span class="t-mod">$2</span>')
+      .replace(/ AS /, ' <span class="t-mod">AS</span> ');
+  }
+  [].forEach.call(document.querySelectorAll(".code"), function (c) {
+    var t = c.querySelector(".ct span");
+    if (!t || t.textContent !== "Dockerfile") return;
+    [].forEach.call(c.querySelectorAll(".blk"), function (b) {
+      b.innerHTML = b.textContent.split("\n").map(hlDocker).join("\n");
+    });
+    var lang = c.querySelector(".ct .lang");
+    if (lang) lang.textContent = "Dockerfile";
+  });
+
+  /* Карточки томов (слайд «Данные»): клик подсвечивает флаг — даём то же с клавиатуры (Enter). */
+  [].forEach.call(document.querySelectorAll(".r.viz .ent[data-k]"), function (e) {
+    e.tabIndex = 0;
+    e.setAttribute("role", "button");
+    e.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") { ev.preventDefault(); e.click(); }
+    });
+  });
 })();

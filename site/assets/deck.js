@@ -75,9 +75,10 @@
   }
   function hlDocker(l) {
     var p = splitComment(l, "#"), code = esc(p[0]);
-    code = code.replace(/^(\s*)(FROM|RUN|CMD|COPY|ADD|WORKDIR|ENV|ARG|EXPOSE|USER|ENTRYPOINT|HEALTHCHECK|VOLUME|LABEL)\b/, '$1<span class="t-mod">$2</span>')
-      .replace(/\bAS\b/, '<span class="t-mod">AS</span>')
-      .replace(/("[^"]*")/g, '<span class="t-str">$1</span>');
+    /* сначала строки, потом ключевые слова: иначе regex строк цепляет class="…" вставленных span */
+    code = code.replace(/("[^"]*")/g, '<span class="t-str">$1</span>')
+      .replace(/^(\s*)(FROM|RUN|CMD|COPY|ADD|WORKDIR|ENV|ARG|EXPOSE|USER|ENTRYPOINT|HEALTHCHECK|VOLUME|LABEL)\b/, '$1<span class="t-mod">$2</span>')
+      .replace(/(\s)AS(\s)/, '$1<span class="t-mod">AS</span>$2');
     return code + (p[1] ? '<span class="t-com">' + esc(p[1]) + "</span>" : "");
   }
   function hlDiff(l) {

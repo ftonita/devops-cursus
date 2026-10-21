@@ -40,7 +40,7 @@
     running = false; gateOn = false;
     lockBrk(false);
     $("pipeGate").disabled = true;
-    SIM.forEach(function (s) { setNode(s.id, "", s.idle); });
+    SIM.forEach(function (s) { setNode(s.id, "", s.id === "prod" && mode === "dep" ? "без ворот" : s.idle); });
     logEl.innerHTML = '<span class="dim">Нажмите «▶ Запустить».</span>';
     setProd(V_OLD, "Прод работает на " + V_OLD + ". Это текущая версия.");
   }
@@ -85,6 +85,7 @@
   function runPipeline() {
     clearRun();
     running = true; lockBrk(true);
+    logEl.innerHTML = "";
     log('<span class="cmd">$ git push origin main</span>  <span class="dim"># триггер пайплайна</span>');
     step(0);
   }
@@ -95,6 +96,7 @@
     $("pipeGate").disabled = true;
     setNode("prod", "run", "выкат…");
     log('<span class="dim">человек нажал Approve</span>');
+    if (document.activeElement === $("pipeGate")) $("pipeRun").focus();
     timers.push(setTimeout(finishProd, 650));
   }
 
@@ -128,8 +130,8 @@
     roll: {
       name: "Rolling update",
       desc: "Инстансы обновляются поочерёдно, без простоя. Пока идёт выкат, работают обе версии одновременно.",
-      price: "Цена: новая версия обязана быть совместимой со старой по API и схеме БД.",
-      back: "Откат: тот же rolling, но с v1 обратно.",
+      price: "Новая версия обязана быть совместимой со старой по API и схеме БД.",
+      back: "Тот же rolling, только в обратную сторону: инстансы по очереди возвращаются на v1.",
       steps: [
         { p: 0, t: "Все инстансы на v1." },
         { p: 20, t: "Заменили 4 из 20 инстансов: обе версии обслуживают трафик." },
@@ -142,8 +144,8 @@
     bg: {
       name: "Blue-Green",
       desc: "Полностью новое окружение (Green) поднимается рядом со старым (Blue). Проверяем его, затем переключаем весь трафик разом.",
-      price: "Цена: два полных окружения. Зато откат — мгновенное переключение обратно.",
-      back: "Откат: балансировщик снова на Blue (v1). Green остаётся нетронутым.",
+      price: "Два полных окружения. Зато откат — мгновенное переключение обратно.",
+      back: "Мгновенный: балансировщик снова на Blue (v1), старое окружение никуда не делось.",
       steps: [
         { p: 0, t: "Green (v2) поднят и проверяется. Трафик по-прежнему на Blue (v1)." },
         { p: 100, t: "Балансировщик переключён разом: 100% трафика на Green (v2)." }
@@ -152,8 +154,8 @@
     canary: {
       name: "Canary",
       desc: "Малая доля трафика получает новую версию. Если метрики в норме, доля растёт до 100%.",
-      price: "Цена: нужны метрики ошибок и задержки по канарейке. Без них ошибку не заметить.",
-      back: "Откат: метрики плохие, доля v2 обнуляется до 0%.",
+      price: "Нужны метрики ошибок и задержки по канарейке. Без них ошибку не заметить.",
+      back: "Метрики плохие — доля v2 обнуляется до 0%. Пострадал только трафик, который успел попасть на канарейку.",
       steps: [
         { p: 0, t: "Весь трафик на стабильной v1." },
         { p: 5, t: "5% трафика на canary (v2). Смотрим 5xx и p99." },
@@ -181,6 +183,7 @@
     $("stName").textContent = ST[id].name;
     $("stDesc").textContent = ST[id].desc;
     $("stPrice").textContent = ST[id].price;
+    $("stBackTxt").textContent = ST[id].back;
     show(0, ST[id].steps[0].t);
   }
   function play() {
@@ -189,7 +192,7 @@
       stTimers.push(setTimeout(function () { show(s.p, s.t); }, k * 800));
     });
   }
-  function rollback() { stopSt(); show(0, ST[cur].back); }
+  function rollback() { stopSt(); show(0, "Откат: весь трафик снова на v1."); }
 
   all("[data-st]").forEach(function (b) {
     b.addEventListener("click", function () { pick(b.dataset.st); });
@@ -213,6 +216,7 @@
     fastBad: "Скорость выросла, а стабильность просела. Это не улучшение, а долг: лечите тесты и откат, а не темп.",
     fastOk: "Скорость растёт, стабильность держится. Именно такой тренд и нужен.",
     slowBad: "Стабильность просела без выигрыша в скорости. Сначала разберите причины сбоев.",
+    mixed: "Частота и lead time тянут в разные стороны. Ищите узкое место: деплоев больше, а изменения ждут дольше.",
     slowDown: "Скорость ниже точки отсчёта, стабильность не изменилась. Ищите, что тормозит выкат: ручные ворота, долгий пайплайн, очередь раннеров.",
     stabBetter: "Стабильность лучше, скорость на месте. Хороший задел: теперь можно выкатывать чаще."
   };
@@ -226,7 +230,8 @@
     var speedDown = v.freq < BASE.freq || v.lead > BASE.lead;
     var stabWorse = v.cfr > BASE.cfr || v.rest > BASE.rest;
     var key;
-    if (speedUp && stabWorse) key = "fastBad";
+    if (speedUp && speedDown) key = stabWorse ? "slowBad" : "mixed";
+    else if (speedUp && stabWorse) key = "fastBad";
     else if (speedUp) key = "fastOk";
     else if (stabWorse) key = "slowBad";
     else if (speedDown) key = "slowDown";
