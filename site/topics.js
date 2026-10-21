@@ -1,7 +1,7 @@
 /* Источник правды для оглавления курса (site/index.html рисуется из этого списка).
    Новая тема = одна запись здесь. Поля:
    id — номер как в ROADMAP.MD, slug — часть имён файлов, theme — класс темы (cursus.css),
-   status — "ready" | "soon", deck/manual/quiz — пути относительно корня сайта (пусто = нет).
+   status — "ready" | "soon", quiz: false — если у темы нет квиза. Пути строятся из id и slug.
    slides и minutes обновляет scripts/check-decks.py --update-topics. */
 window.TOPICS = [
   { id: "00", slug: "git", theme: "theme-git", icon: "🌳", status: "ready",
@@ -9,7 +9,7 @@ window.TOPICS = [
     pitch: "Единственный инструмент, без которого не работает вся остальная цепочка. Три зоны, коммиты и ветки — без магии.",
     bullets: ["Рабочий каталог → индекс → репозиторий", "Ветки, merge и rebase без паники", "Как откатывать, не ломая историю"],
     slides: 0, minutes: 0 },
-  { id: "02", slug: "cicd", theme: "theme-cicd", icon: "🔁", status: "ready", quiz: false,
+  { id: "02", slug: "cicd", theme: "theme-cicd", icon: "🔁", status: "ready",
     title: "CI/CD: от коммита до production", level: "База",
     pitch: "Как код сам собирается, проверяется и доезжает до пользователей — и почему релиз перестаёт быть событием.",
     bullets: ["Этапы пайплайна и quality gates", "Blue-green, canary, rolling", "Метрики DORA: как понять, что стало лучше"],

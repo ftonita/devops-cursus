@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="only light">
+<meta name="description" content="Git за 15 минут: три зоны (рабочий каталог, индекс, репозиторий), ветки, merge против rebase и откат без паники.">
+<title>Git: основы — DevOps Cursus</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='10' width='52' height='44' rx='10' fill='%230f172a'/%3E%3Cpath d='m18 26 8 6-8 6M30 40h14' stroke='%23fff' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap&subset=cyrillic" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/deck.css">
+<link rel="stylesheet" href="../../assets/cursus.css">
+<style>
+/* Стили только этой колоды (общие компоненты — в cursus.css, сюда не выносить без нужды) */
+.sim-body { gap: 12px; }
+.sim-files { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.sim-files .lbl { font-weight: 700; color: var(--ink2); font-size: 17px; margin-right: 4px; }
+.fch { font: 600 16px var(--mono); background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 7px 14px; cursor: pointer; color: var(--ink); }
+.fch:hover { border-color: var(--accent); }
+.fch[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 3px var(--accent-soft); }
+.sim { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.zone { background: #fff; border: 1.5px solid var(--line); border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.zone h3 { margin: 0; font-size: 21px; }
+.zone .zs { margin: 0 0 4px; font-size: 15px; color: var(--mut); }
+.frow { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--soft); border: 1.5px solid transparent; border-radius: 10px; padding: 7px 10px; font: 600 15px var(--mono); }
+.frow .v { font: 500 14px var(--sans); color: var(--ink2); white-space: nowrap; }
+.frow.hot { background: #fff4d6; border-color: #f59e0b; }
+.frow.staged { background: #e7f7ee; border-color: #0e8a4f; }
+.frow.cur { box-shadow: 0 0 0 2px var(--accent); }
+.hl { font: 15px var(--mono); color: var(--ink2); padding: 2px 2px; }
+.simstatus { margin: 0; font: 600 16px var(--mono); color: var(--ink2); }
+.sim-bottom { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.sim-btns { display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; }
+.sim-btns .btn { font-size: 16px; padding: 10px 14px; }
+.term .warn { color: #fbbf24; }
+.term pre { font-size: 16px; }
+
+.z3 { display: grid; grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr) 150px minmax(0, 1fr); align-items: center; gap: 8px; }
+.z3 .zb { background: #fff; border: 1.5px solid var(--line); border-radius: 18px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; min-height: 210px; }
+.z3 .zb h3 { margin: 0; font-size: 22px; }
+.z3 .zb p { margin: 0; font-size: 17px; color: var(--ink2); }
+.z3 .zb code { font-size: 16px; }
+.z3 .za { display: flex; flex-direction: column; gap: 6px; align-items: center; text-align: center; }
+.z3 .za b { font: 700 15px var(--mono); color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 8px; padding: 4px 8px; white-space: nowrap; }
+.z3 .za span { font-size: 15px; color: var(--mut); }
+.z3-back { margin: 0; font-size: 16px; color: var(--ink2); }
+.z3-back code { font-size: 15px; }
+.z3-remote { display: flex; align-items: center; gap: 14px; background: var(--soft); border: 1.5px dashed var(--line); border-radius: 16px; padding: 12px 18px; font-size: 17px; color: var(--ink2); }
+.z3-remote b { color: var(--ink); }
+
+.gwrap { background: #fff; border: 1.5px solid var(--line); border-radius: 18px; padding: 10px 14px 12px; }
+.gwrap svg { width: 100%; height: auto; display: block; }
+.gn { fill: #fff; stroke: #0f172a; stroke-width: 2.5; }
+.gnew { stroke: var(--accent); }
+.gmerge { fill: var(--accent); stroke: var(--accent); }
+.gold { fill: #fff; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 6 5; }
+.gt { font: 700 16px var(--mono); fill: #0f172a; text-anchor: middle; dominant-baseline: central; }
+.gt-w { fill: #fff; }
+.gt-old { fill: #94a3b8; }
+.ge { stroke: #0f172a; stroke-width: 3; fill: none; }
+.ge-new { stroke: var(--accent); stroke-width: 3; fill: none; }
+.ge-old { stroke: #94a3b8; stroke-width: 2.5; fill: none; stroke-dasharray: 6 5; }
+.gl { font: 600 17px var(--sans); fill: var(--ink2); text-anchor: middle; }
+.gl-b { font: 800 18px var(--sans); fill: var(--accent); text-anchor: middle; }
+.gcap { margin: 0; font-size: 18px; color: var(--ink2); }
+.gcap b { color: var(--ink); }
+
+.chk { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 16px; font: 500 19px var(--sans); color: var(--ink); cursor: pointer; }
+.chk:hover { border-color: var(--accent); }
+.chk .bx { flex: none; width: 28px; height: 28px; border-radius: 8px; border: 2px solid #cbd5e1; display: grid; place-items: center; font-weight: 800; color: #fff; }
+.chk[aria-pressed="true"] { border-color: #0e8a4f; background: #e7f7ee; }
+.chk[aria-pressed="true"] .bx { background: #0e8a4f; border-color: #0e8a4f; }
+.chk[aria-pressed="true"] .bx::after { content: "✓"; }
+.chk-list { display: grid; gap: 10px; }
+.chk-foot { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.chk-msg { margin: 0; font-size: 18px; font-weight: 700; color: var(--ink); }
+
+.ap-row { display: grid; grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr); gap: 10px; align-items: center; background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+.ap-row .ar { text-align: center; color: var(--mut); font-size: 22px; font-weight: 800; }
+.ap-bad { color: #9f1239; font-size: 17px; }
+.ap-good { color: #0e6b3f; font-size: 17px; }
+.ap-bad b, .ap-good b { display: block; font-size: 14px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 3px; }
+.ap-bad code, .ap-good code { font-size: 15px; }
+.ap-list { display: grid; gap: 10px; }
+
+.rf-cmd { font-size: 17px; }
+
+body.flow .sim, body.flow .sim-bottom, body.flow .z3 { grid-template-columns: 1fr; }
+body.flow .z3 .za { flex-direction: row; justify-content: center; }
+body.flow .zone, body.flow .z3 .zb { min-height: 0; }
+body.flow .ap-row { grid-template-columns: 1fr; }
+body.flow .ap-row .ar { display: none; }
+
+/* добивка вёрстки: заполнить высоту, не оставлять пустых дыр */
+.zone { min-height: 300px; }
+.sim-bottom .term { min-height: 230px; }
+.sim-btns .btn { font-size: 18px; padding: 14px 18px; }
+.z3 .zb { min-height: 300px; }
+.z3 .zb p { font-size: 19px; }
+.z3 .zb code { font-size: 17px; }
+.gwrap { flex: 1; display: flex; align-items: center; justify-content: center; }
+.gwrap svg { width: 100%; height: auto; max-height: 440px; }
+.chk { padding: 18px 20px; font-size: 21px; }
+.chk .ct { display: inline; }
+.chk-list { gap: 12px; }
+.qa-tall .flip { min-height: 180px; }
+.z3-remote { padding: 18px 22px; }
+body.flow .zone { min-height: 0; }
+body.flow .gwrap svg { max-height: none; }
+</style>
+</head>
+<body class="theme-git">
+<noscript><div class="noscript">Для презентации нужен JavaScript. Текстовая версия — <a href="../../materials/manuals/00-git-manual/">мануал</a>.</div></noscript>
+<div class="stage">
+<main class="deck" id="deck">
+
+<!-- ======================= 01 ТИТУЛ ======================= -->
+<section data-title="Git: основы" class="dom-gr">
+  <div class="sh"><div class="kicker"><span class="n"></span>Тема 00 · Git: основы</div></div>
+  <div class="hero">
+    <div>
+      <h1>Git — не магия:<br>три зоны и граф коммитов</h1>
+      <p class="hook">Новички видят два места — файлы и историю. Git видит <em>три</em>: между ними стоит индекс.</p>
+      <p class="lede">За ≈ 15 минут: как устроен Git, что делают ветки, и как откатить ошибку без паники.</p>
+      <div class="agenda">
+        <span><b>1</b>Зачем</span><span><b>2</b>Три зоны</span><span><b>3</b>Руками</span>
+        <span><b>4</b>Ветки</span><span><b>5</b>Откат</span><span><b>6</b>Проверка</span>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>3</b><span>зоны, а не две</span></div>
+      <div class="stat"><b>4</b><span>типа объектов в .git</span></div>
+    </div>
+  </div>
+  <div class="hint"><kbd>→</kbd> далее · <kbd>F</kbd> полный экран · <kbd>P</kbd> режим докладчика · <kbd>M</kbd> меню</div>
+  <aside class="notes">
+    <p>Начать с вопроса в зал: «Кто коммитил, а потом понимал, что коммитил не то?» Пообещать, что к концу темы эта ситуация станет разбираемой.</p>
+    <p>Подсказать, что все интерактивы работают без сети, а клавиши стрелок листают слайды.</p>
+  </aside>
+</section>
+
+<!-- ======================= 02 БЫЛО / СТАЛО ======================= -->
+<section data-title="Зачем Git" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Зачем</div>
+    <h2>Без истории откат — это бэкап, с Git — команда</h2>
+    <p class="lede">Git превращает «откатить» из аварийной процедуры в обычную операцию.</p>
+  </div>
+  <div class="body col">
+    <div class="pain">
+      <div class="was"><h3>😖 Без системы контроля версий</h3><ul><li>История в папках <code class="i">project_final_v2_ПРАВКИ_ok/</code></li><li>Непонятно, кто и зачем поменял строку, из-за которой упал прод</li><li>Два человека не могут править один проект без ручной склейки</li></ul></div>
+      <div class="arrow">→</div>
+      <div class="now"><h3>😌 С Git</h3><ul><li>Каждое изменение с автором, датой и сообщением</li><li>Любая версия воспроизводится по её идентификатору</li><li>Откат — обычная операция: <code class="i">git revert</code></li></ul></div>
+    </div>
+    <div class="analogy" style="margin-top:22px"><span class="ai">💡</span><div><span class="al">Аналогия</span>Коммит — не список правок, а фотография всего проекта на момент. Поэтому её можно сравнить с любым другим моментом.</div></div>
+  </div>
+  <aside class="notes">
+    <p>Показать две картинки: папку «final_v2_ПРАВКИ_ok» и граф коммитов. Спросить зал, кто видел первое у себя.</p>
+    <p>Главная мысль: Git — это не «сохранялка», а история с авторами и откатами.</p>
+  </aside>
+</section>
+
+<!-- ======================= 03 ТРИ ЗОНЫ (схема) ======================= -->
+<section data-title="Три зоны" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Ключевая идея</div>
+    <h2>Git видит три зоны, а не две</h2>
+    <p class="lede">Между файлами и историей стоит индекс — это то, что войдёт в следующий коммит.</p>
+  </div>
+  <div class="body col" style="gap:18px">
+    <div class="z3">
+      <div class="zb"><h3>Рабочий каталог</h3><p>Файлы, которые вы правите в редакторе.</p><p><code class="i">working directory</code></p></div>
+      <div class="za"><b>git add</b><span>в индекс</span></div>
+      <div class="zb"><h3>Индекс</h3><p>Подготовленный снимок: что войдёт в коммит.</p><p><code class="i">staging area</code></p></div>
+      <div class="za"><b>git commit</b><span>в историю</span></div>
+      <div class="zb"><h3>Репозиторий</h3><p>Неизменяемые коммиты в <code class="i">.git</code>.</p><p><code class="i">history</code></p></div>
+    </div>
+    <p class="z3-back">Назад: <code class="i">git restore</code> (диск ← индекс), <code class="i">git restore --staged</code> (индекс ← репозиторий), <code class="i">git reset</code>.</p>
+    <div class="z3-remote"><b>origin</b><span>удалённый репозиторий: <code class="i">git push</code> отправляет, <code class="i">git fetch</code> скачивает. Локальная работа без сети не требует origin.</span></div>
+  </div>
+  <aside class="notes">
+    <p>Пройти стрелками слева направо. Подчеркнуть: индекс нужен, чтобы коммит не обязан был совпадать с диском.</p>
+    <p>Следующий слайд — это же самое, но руками.</p>
+  </aside>
+</section>
+
+<!-- ======================= 04 ИНТЕРАКТИВ: СИМУЛЯТОР ЗОН ======================= -->
+<section data-title="Симулятор: три зоны" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Попробуйте сами</div>
+    <h2>Нажимайте команды — смотрите, куда уходит файл</h2>
+  </div>
+  <div class="body col sim-body">
+    <div class="sim-files" role="group" aria-label="Текущий файл">
+      <span class="lbl">Текущий файл:</span>
+      <button class="fch" data-file="app.py" aria-pressed="true">app.py</button>
+      <button class="fch" data-file="utils.py" aria-pressed="false">utils.py</button>
+      <button class="fch" data-file="README.md" aria-pressed="false">README.md</button>
+    </div>
+    <div class="sim">
+      <div class="zone"><h3>Рабочий каталог</h3><p class="zs">файлы в редакторе</p><div id="zWd"></div></div>
+      <div class="zone"><h3>Индекс</h3><p class="zs">то, что войдёт в коммит</p><div id="zIdx"></div></div>
+      <div class="zone"><h3>Репозиторий</h3><p class="zs">неизменяемая история</p><div id="zRepo"></div></div>
+    </div>
+    <p class="simstatus" id="simStatus" aria-live="polite"></p>
+    <div class="sim-bottom">
+      <div class="sim-btns">
+        <button class="btn acc" data-act="edit">✏️ Правка файла</button>
+        <button class="btn" data-act="add">git add</button>
+        <button class="btn" data-act="commit">git commit</button>
+        <button class="btn" data-act="restore">git restore</button>
+        <button class="btn" data-act="unstage">git restore --staged</button>
+        <button class="btn ghost" data-act="reset">git reset --hard</button>
+        <button class="btn ghost" id="simReset">⟲ Сбросить всё</button>
+      </div>
+      <div class="term"><div class="tt"><i></i><i></i><i></i>&nbsp;журнал команд</div><pre id="simLog" aria-live="polite"></pre></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Дать 30 секунд самим: «Правка → add → commit». Потом спросить: что будет после «git restore»? Ответ: диск вернётся к индексу, индекс не тронут.</p>
+    <p>Показать «git reset --hard»: всё несохранённое пропадает. Это самая опасная кнопка, поэтому в журнале она красная.</p>
+  </aside>
+</section>
+
+<!-- ======================= 05 ССЫЛКИ: КОММИТ, ВЕТКА, HEAD ======================= -->
+<section data-title="Коммит, ветка, HEAD" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Объекты и указатели</div>
+    <h2>Ветка — это указатель на коммит, а не копия файлов</h2>
+    <p class="lede">Создать ветку стоит почти ничего: это запись на 41 байт с хешем коммита.</p>
+  </div>
+  <div class="body col">
+    <div class="grid g2">
+      <div class="ent dom-dk"><div class="ei">C</div><div><div class="et">Коммит</div><div class="ed">Снимок всего дерева файлов + автор, дата, сообщение, ссылка на родителя.</div></div></div>
+      <div class="ent dom-dk"><div class="ei">B</div><div><div class="et">Ветка</div><div class="ed">Подвижный указатель на один коммит: <code class="i">refs/heads/main</code>.</div></div></div>
+      <div class="ent dom-dk"><div class="ei">H</div><div><div class="et">HEAD</div><div class="ed">«Где я сейчас». Обычно ссылка на ветку, а не на коммит.</div></div></div>
+      <div class="ent dom-dk"><div class="ei">D</div><div><div class="et">Detached HEAD</div><div class="ed">HEAD смотрит прямо на коммит: новые коммиты ни к чему не привязаны и теряются.</div></div></div>
+      <div class="ent dom-dk"><div class="ei">T</div><div><div class="et">Тег</div><div class="ed">Неподвижная метка. Для релизов используйте annotated tag.</div></div></div>
+      <div class="ent dom-dk"><div class="ei">O</div><div><div class="et">origin</div><div class="ed">Просто имя URL, из которого клонировали. Не «главный сервер».</div></div></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Ключевая фраза: ветка — подвижный указатель. Создали ветку — ничего не скопировали, просто записали хеш.</p>
+    <p>Спросить: что случится с коммитом, если HEAD «отвязан»? Ответ — он висит без ветки и уйдёт при переключении.</p>
+  </aside>
+</section>
+
+<!-- ======================= 06 ИНТЕРАКТИВ: ГРАФ ВЕТОК ======================= -->
+<section data-title="Граф: merge и rebase" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Ветки</div>
+    <h2>Merge сохраняет историю, rebase переписывает её</h2>
+  </div>
+  <div class="body col" style="gap:14px">
+    <div class="tabs" data-group="graph" role="tablist" aria-label="Способ интеграции">
+      <button data-tab="ff" data-default>Fast-forward</button>
+      <button data-tab="merge">Three-way merge</button>
+      <button data-tab="rebase">Rebase</button>
+    </div>
+
+    <div data-pane="ff" data-group="graph" class="gwrap">
+      <svg viewBox="0 0 1100 250" role="img" aria-label="Fast-forward: main переносится вперёд по прямой линии">
+        <line class="ge" x1="112" y1="120" x2="228" y2="120"/>
+        <line class="ge" x1="272" y1="120" x2="388" y2="120"/>
+        <line class="ge" x1="432" y1="120" x2="548" y2="120"/>
+        <line class="ge-new" x1="592" y1="120" x2="708" y2="120"/>
+        <circle class="gn" cx="90" cy="120" r="22"/><text class="gt" x="90" y="120">C1</text>
+        <circle class="gn" cx="250" cy="120" r="22"/><text class="gt" x="250" y="120">C2</text>
+        <circle class="gn" cx="410" cy="120" r="22"/><text class="gt" x="410" y="120">C3</text>
+        <circle class="gn gnew" cx="570" cy="120" r="22"/><text class="gt" x="570" y="120">C4</text>
+        <circle class="gn gnew" cx="730" cy="120" r="22"/><text class="gt" x="730" y="120">C5</text>
+        <text class="gl-b" x="410" y="66">main (до слияния)</text>
+        <text class="gl-b" x="730" y="66">main и feature</text>
+        <text class="gl" x="570" y="190">указатель main просто переносится на C5</text>
+      </svg>
+    </div>
+    <div data-pane="merge" data-group="graph" class="gwrap">
+      <svg viewBox="0 0 1100 300" role="img" aria-label="Three-way merge: две ветки сходятся в merge-коммит с двумя родителями">
+        <line class="ge" x1="112" y1="110" x2="228" y2="110"/>
+        <line class="ge" x1="272" y1="110" x2="388" y2="110"/>
+        <line class="ge" x1="452" y1="110" x2="778" y2="110"/>
+        <line class="ge-new" x1="250" y1="110" x2="410" y2="240"/>
+        <line class="ge-new" x1="452" y1="240" x2="598" y2="240"/>
+        <line class="ge-new" x1="620" y1="240" x2="780" y2="122"/>
+        <circle class="gn" cx="90" cy="110" r="22"/><text class="gt" x="90" y="110">C1</text>
+        <circle class="gn" cx="250" cy="110" r="22"/><text class="gt" x="250" y="110">C2</text>
+        <circle class="gn" cx="430" cy="110" r="22"/><text class="gt" x="430" y="110">C3</text>
+        <circle class="gn gnew" cx="430" cy="240" r="22"/><text class="gt" x="430" y="240">C4</text>
+        <circle class="gn gnew" cx="620" cy="240" r="22"/><text class="gt" x="620" y="240">C5</text>
+        <circle class="gmerge" cx="800" cy="110" r="24"/><text class="gt gt-w" x="800" y="110">C6</text>
+        <text class="gl-b" x="430" y="62">main</text>
+        <text class="gl-b" x="620" y="290">feature</text>
+        <text class="gl" x="800" y="62">merge-коммит: два родителя</text>
+      </svg>
+    </div>
+    <div data-pane="rebase" data-group="graph" class="gwrap">
+      <svg viewBox="0 0 1100 300" role="img" aria-label="Rebase: коммиты feature переписаны поверх main с новыми хешами">
+        <line class="ge" x1="112" y1="110" x2="228" y2="110"/>
+        <line class="ge" x1="272" y1="110" x2="408" y2="110"/>
+        <line class="ge" x1="452" y1="110" x2="588" y2="110"/>
+        <line class="ge-new" x1="632" y1="110" x2="768" y2="110"/>
+        <line class="ge-old" x1="250" y1="110" x2="378" y2="240"/>
+        <line class="ge-old" x1="422" y1="240" x2="548" y2="240"/>
+        <circle class="gn" cx="90" cy="110" r="22"/><text class="gt" x="90" y="110">C1</text>
+        <circle class="gn" cx="250" cy="110" r="22"/><text class="gt" x="250" y="110">C2</text>
+        <circle class="gn" cx="430" cy="110" r="22"/><text class="gt" x="430" y="110">C3</text>
+        <circle class="gn gnew" cx="610" cy="110" r="22"/><text class="gt" x="610" y="110">C4′</text>
+        <circle class="gn gnew" cx="790" cy="110" r="22"/><text class="gt" x="790" y="110">C5′</text>
+        <circle class="gold" cx="400" cy="240" r="22"/><text class="gt gt-old" x="400" y="240">C4</text>
+        <circle class="gold" cx="570" cy="240" r="22"/><text class="gt gt-old" x="570" y="240">C5</text>
+        <text class="gl-b" x="790" y="62">main и feature</text>
+        <text class="gl" x="700" y="180">C4′ и C5′ — копии с новыми хешами</text>
+        <text class="gl" x="485" y="290">старые C4, C5 — отброшены</text>
+      </svg>
+    </div>
+
+    <p class="gcap" data-pane="ff" data-group="graph"><b>Fast-forward:</b> в main не появилось новых коммитов, поэтому слияние — это просто перенос указателя. Merge-коммита нет, история линейна.</p>
+    <p class="gcap" data-pane="merge" data-group="graph"><b>Merge:</b> обе ветки получили коммиты, Git создаёт merge-коммит с двумя родителями. История сохранена как была.</p>
+    <p class="gcap" data-pane="rebase" data-group="graph"><b>Rebase:</b> коммиты feature переписаны поверх main с новыми хешами. История линейна, но переписана. Поэтому — только для неопубликованных веток.</p>
+  </div>
+  <aside class="notes">
+    <p>Переключить вкладки по порядку: fast-forward, merge, rebase. На каждой показать, сколько родителей у результата.</p>
+    <p>Главное правило слайда: rebase переписывает хеши. Если ветку уже видел кто-то ещё, rebase ломает у него историю.</p>
+  </aside>
+</section>
+
+<!-- ======================= 07 КОНФЛИКТ (шаги, код) ======================= -->
+<section data-title="Конфликт слияния" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Конфликт</div>
+    <h2>Конфликт — не авария: Git просто просит решить</h2>
+    <p class="lede">Нажмите на блок кода или листайте <kbd>→</kbd>: подсвечивается шаг и пояснение справа.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <script type="text/x-code" data-lang="text" data-title="src/payment.py" data-cls="grow">
+        #@markers
+        <<<<<<< HEAD
+            retries = 3
+        =======
+            retries = 5
+        >>>>>>> main
+        #@status
+        $ git status --short
+        UU src/payment.py
+        #@add
+        $ git add src/payment.py
+        #@commit
+        $ git commit
+      </script>
+    </div>
+    <div class="r viz">
+      <div class="ent dom-gr" data-k="status"><div class="ei">1</div><div><div class="et">Список конфликтов</div><div class="ed"><code class="i">UU</code> — файл в конфликте. Git не угадывает: он остановился.</div></div></div>
+      <div class="ent dom-gr" data-k="markers"><div class="ei">2</div><div><div class="et">Правка маркеров</div><div class="ed">Уберите <code class="i">&lt;&lt;&lt;</code>, <code class="i">===</code>, <code class="i">&gt;&gt;&gt;</code>, оставьте верный код.</div></div></div>
+      <div class="ent dom-gr" data-k="add"><div class="ei">3</div><div><div class="et">git add</div><div class="ed">Означает «конфликт разрешён» для этого файла.</div></div></div>
+      <div class="ent dom-gr" data-k="commit"><div class="ei">4</div><div><div class="et">git commit</div><div class="ed">Создаёт merge-коммит. Передумали — <code class="i">git merge --abort</code>.</div></div></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Пройти четыре шага стрелкой. Подчеркнуть: маркеры одинаковы и при merge, и при rebase, отличается итоговая история.</p>
+    <p>Фраза для зала: «Конфликт — это вопрос, а не ошибка».</p>
+  </aside>
+</section>
+
+<!-- ======================= 08 ПРАКТИКА: ЦИКЛ ПО ШАГАМ ======================= -->
+<section data-title="Ежедневный цикл" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Практика</div>
+    <h2>Ежедневный цикл: проверить, добавить, зафиксировать</h2>
+    <p class="lede">Четыре команды, которые стоит выполнять перед каждым коммитом и после него.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <script type="text/x-code" data-lang="git" data-title="terminal" data-cls="grow">
+        #@status
+        git status --short --branch
+        #@add
+        git add -p
+        #@commit
+        git commit -m "fix(payment): retry on 502"
+        #@log
+        git log --oneline --graph --decorate --all
+      </script>
+    </div>
+    <div class="r viz">
+      <div class="ent dom-gr" data-k="status"><div class="ei">1</div><div><div class="et">Что изменилось</div><div class="ed">Два раздела в выводе — две зоны. Ветка и синхронизация видны сразу.</div></div></div>
+      <div class="ent dom-gr" data-k="add"><div class="ei">2</div><div><div class="et">Кусок за куском</div><div class="ed"><code class="i">add -p</code> кладёт в индекс только нужные фрагменты.</div></div></div>
+      <div class="ent dom-gr" data-k="commit"><div class="ei">3</div><div><div class="et">Коммит</div><div class="ed">Индекс становится снимком. Сообщение — в императиве, с ответом «зачем».</div></div></div>
+      <div class="ent dom-gr" data-k="log"><div class="ei">4</div><div><div class="et">Проверка графа</div><div class="ed">Все ветки и коммиты в одном виде. Ошибки видны до push.</div></div></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Пройти четыре шага. Спросить зал: какой из них чаще всего пропускают? Обычно это <code>status</code>.</p>
+  </aside>
+</section>
+
+<!-- ======================= 09 ТЕСТ 1 ======================= -->
+<section data-title="Проверьте себя: индекс" class="dom-id">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Проверка</div>
+    <h2>Что попадёт в коммит?</h2>
+  </div>
+  <div class="body col">
+    <div class="mc" data-correct="1">
+      <div class="q">Вы поправили <code class="i">app.py</code> и <code class="i">utils.py</code>, но выполнили только <code class="i">git add app.py</code>. Что войдёт в <code class="i">git commit</code>?</div>
+      <div class="opts">
+        <button>Оба файла: commit всегда берёт рабочий каталог</button>
+        <button>Только app.py: commit фиксирует индекс</button>
+        <button>Ничего: без <code class="i">git add -A</code> коммит пустой</button>
+      </div>
+      <div class="why"><b>Почему так.</b> Коммит фиксирует индекс, а не диск. Индекс — это то, что вы подготовили через <code class="i">git add</code>. Поэтому <code class="i">utils.py</code> останется в рабочем каталоге до следующего коммита.</div>
+      <span class="score"></span>
+    </div>
+  </div>
+  <aside class="notes"><p>Дать 20 секунд подумать. Самый частый ответ — «оба», это и есть проверка понимания индекса.</p></aside>
+</section>
+
+<!-- ======================= 10 ИНТЕРАКТИВ: ОТКАТ (ситуация → команда) ======================= -->
+<section data-title="Откат: ситуация → команда" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Ошибки и откат</div>
+    <h2>Что случилось → какая команда отменит</h2>
+    <p class="lede">Нажмите на ситуацию: появится команда. Почти всё в Git обратимо, нужно выбрать правильный инструмент.</p>
+  </div>
+  <div class="qa qa-tall" style="grid-template-columns: repeat(2, minmax(0,1fr))">
+    <button class="flip" aria-expanded="false"><span class="q">Правил файл, ещё не добавлял — вернуть как было</span><span class="a"><code class="i">git restore app.py</code> — диск возвращается к индексу (или к HEAD, если в индексе пусто).</span><span class="tap">показать команду →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Случайно сделал git add, правки нужно оставить</span><span class="a"><code class="i">git restore --staged app.py</code> — файл уходит из индекса, правки на диске целы.</span><span class="tap">показать команду →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Последний коммит не отправлен, хочу его убрать, но сохранить код</span><span class="a"><code class="i">git reset HEAD~1</code> — ветка сдвигается назад, изменения остаются на диске.</span><span class="tap">показать команду →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Коммит уже в общей ветке на сервере</span><span class="a"><code class="i">git revert &lt;sha&gt;</code> — новый коммит, отменяющий изменения. История не переписывается.</span><span class="tap">показать команду →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Сделал reset --hard и потерял коммит</span><span class="a"><code class="i">git reflog</code>, затем <code class="i">git switch -c rescue &lt;sha&gt;</code>. Работает для закоммиченного.</span><span class="tap">показать команду →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Срочно переключиться, а работа не готова</span><span class="a"><code class="i">git stash push -m "wip"</code>, позже — <code class="i">git stash pop</code>.</span><span class="tap">показать команду →</span></button>
+  </div>
+  <aside class="notes">
+    <p>Пройти шесть карточек, каждую открыть самим залом. Спросить: какая из них опасна? Ответ: reset --hard — незакоммиченное не вернуть даже reflog-ом.</p>
+  </aside>
+</section>
+
+<!-- ======================= 11 ОШИБКИ: что ломается → как правильно ======================= -->
+<section data-title="Ошибки и антипаттерны" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Антипаттерны</div>
+    <h2>Что ломается — и как сделать правильно</h2>
+  </div>
+  <div class="body col ap-list">
+    <div class="ap-row">
+      <div class="ap-bad"><b>Что ломается</b><code class="i">git add .</code> не глядя: в коммит уходят <code class="i">.env</code> и дампы</div>
+      <div class="ar">→</div>
+      <div class="ap-good"><b>Как правильно</b><code class="i">git status</code>, затем <code class="i">git add -p</code>; полноценный <code class="i">.gitignore</code></div>
+    </div>
+    <div class="ap-row">
+      <div class="ap-bad"><b>Что ломается</b><code class="i">git push --force</code> в общую ветку затирает чужие коммиты</div>
+      <div class="ar">→</div>
+      <div class="ap-good"><b>Как правильно</b>Только свои ветки и <code class="i">--force-with-lease</code>; в общих — <code class="i">revert</code></div>
+    </div>
+    <div class="ap-row">
+      <div class="ap-bad"><b>Что ломается</b>«Потом удалим коммит» с секретом: ключ уже в клонах и кэше CI</div>
+      <div class="ar">→</div>
+      <div class="ap-good"><b>Как правильно</b>Сразу ротировать секрет; <code class="i">gitleaks</code> в pre-commit</div>
+    </div>
+    <div class="ap-row">
+      <div class="ap-bad"><b>Что ломается</b><code class="i">git reset --hard</code> «на всякий случай» — незакоммиченное пропало</div>
+      <div class="ar">→</div>
+      <div class="ap-good"><b>Как правильно</b>Сначала <code class="i">git stash</code> или <code class="i">git switch -c backup</code></div>
+    </div>
+    <div class="ap-row">
+      <div class="ap-bad"><b>Что ломается</b>Работа в detached HEAD: коммиты «исчезают» при переключении</div>
+      <div class="ar">→</div>
+      <div class="ap-good"><b>Как правильно</b>Смотреть <code class="i">git status</code>; сохранить — <code class="i">git switch -c &lt;branch&gt;</code></div>
+    </div>
+    <div class="ap-row">
+      <div class="ap-bad"><b>Что ломается</b>«Клонирую заново, когда Git ругается» — теряются ветки и работа</div>
+      <div class="ar">→</div>
+      <div class="ap-good"><b>Как правильно</b>Прочитать сообщение Git: в нём почти всегда есть нужная команда</div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Не читать таблицу целиком: выбрать две строки, которые зал узнаёт сам. Чаще всего узнают «git add .» и «клонирую заново».</p>
+  </aside>
+</section>
+
+<!-- ======================= 12 ИНТЕРАКТИВ: ЧЕК-ЛИСТ ======================= -->
+<section data-title="Чек-лист перед коммитом" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Чек-лист</div>
+    <h2>Пять проверок перед коммитом</h2>
+    <p class="lede">Отмечайте по ходу. Тридцать секунд проверки экономят часы чистки истории.</p>
+  </div>
+  <div class="body col" style="gap:16px">
+    <div class="chk-list">
+      <button class="chk" aria-pressed="false"><span class="bx"></span><span class="ct">Проверил <code class="i">git status</code>: что реально изменилось</span></button>
+      <button class="chk" aria-pressed="false"><span class="bx"></span><span class="ct">Посмотрел <code class="i">git diff --staged</code>: ровно то, что уйдёт в коммит</span></button>
+      <button class="chk" aria-pressed="false"><span class="bx"></span><span class="ct">Нет секретов и <code class="i">.env</code>: <code class="i">.gitignore</code> настроен до первого коммита</span></button>
+      <button class="chk" aria-pressed="false"><span class="bx"></span><span class="ct">Сообщение в императиве: «добавь», «исправь», с ответом «зачем»</span></button>
+      <button class="chk" aria-pressed="false"><span class="bx"></span><span class="ct">Один коммит — одно логическое изменение</span></button>
+    </div>
+    <div class="meter" aria-hidden="true"><i id="chkMeter" style="width:0;background:var(--accent)"></i></div>
+    <div class="chk-foot">
+      <p class="chk-msg" id="chkMsg" aria-live="polite">Пройдено 0 из 5</p>
+      <button class="btn ghost" id="chkReset">⟲ Сбросить</button>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Попросить зал назвать шестой пункт. Обычно из зала приходит «git push», это хороший повод сказать: push — после всех пяти.</p>
+  </aside>
+</section>
+
+<!-- ======================= 13 ТЕСТ 2 ======================= -->
+<section data-title="Проверьте себя: откат" class="dom-id">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Проверка</div>
+    <h2>Баг уже в общем main. Что делаем?</h2>
+  </div>
+  <div class="body col">
+    <div class="mc" data-correct="1">
+      <div class="q">Коммит с багом уже отправлен в общую ветку <code class="i">main</code>, и коллеги его забрали. Какая последовательность правильна?</div>
+      <div class="opts">
+        <button><code class="i">git reset --hard HEAD~1</code>, затем <code class="i">git push --force</code></button>
+        <button><code class="i">git revert &lt;sha&gt;</code>, затем обычный <code class="i">git push</code></button>
+        <button><code class="i">git commit --amend</code>, затем <code class="i">git push --force-with-lease</code></button>
+      </div>
+      <div class="why"><b>Почему так.</b> В общей ветке история не переписывается: <code class="i">revert</code> добавляет обратный коммит, его можно просто отправить. Остальные варианты переписывают то, что уже видели другие, — даже <code class="i">--force-with-lease</code> безопаснее, но всё равно меняет хеши.</div>
+      <span class="score"></span>
+    </div>
+  </div>
+  <aside class="notes"><p>Дать 20 секунд. Разобрать, почему «force-with-lease» не равно «безопасно для общей ветки».</p></aside>
+</section>
+
+<!-- ======================= 14 REFLOG ======================= -->
+<section data-title="Reflog: страховка" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Страховка</div>
+    <h2>Reflog спасает почти всё, но не всё</h2>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <script type="text/x-code" data-lang="git" data-title="terminal" data-cls="grow">
+        $ git reflog
+        a1b2c3d HEAD@{0}: reset: moving to HEAD~1
+        9f8e7d6 HEAD@{1}: commit: fix(payment): retry on 502
+        $ git switch -c rescue 9f8e7d6
+      </script>
+    </div>
+    <div class="r">
+      <div class="callout"><span class="ci">⚠</span><div><b>Что reflog не спасёт</b><br>Незакоммиченные правки, снесённые <code class="i">reset --hard</code> или <code class="i">clean -fd</code>: объектов в Git для них не было.</div></div>
+      <div class="card"><h3>Границы страховки</h3><ul class="ticks">
+        <li>Reflog <b>локален</b>: в свежем клоне его нет.</li>
+        <li>Записи истекают: 90 дней для достижимых коммитов, 30 — для недостижимых.</li>
+        <li>Поэтому перед рискованной операцией дешевле <code class="i">git stash</code>, чем героическое восстановление.</li>
+      </ul></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Показать вывод reflog и спросить: какая строка — «до катастрофы»? Ответ: вторая, это состояние до reset.</p>
+    <p>Подчеркнуть вторую половину слайда: reflog не спасает то, чего никогда не было в Git.</p>
+  </aside>
+</section>
+
+<!-- ======================= 15 ИТОГИ + CTA ======================= -->
+<section data-title="Итоги и что дальше" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Итоги</div>
+    <h2>Что вы теперь умеете</h2>
+  </div>
+  <div class="qa qa-tall">
+    <button class="flip" aria-expanded="false"><span class="q">Зачем нужен индекс?</span><span class="a">Подготовленный снимок: коммит берёт индекс, а не диск. Так правки делятся на осмысленные коммиты.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Чем ветка отличается от HEAD и тега?</span><span class="a">Ветка — подвижный указатель, HEAD — где вы сейчас, тег — неподвижная метка.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Merge или rebase?</span><span class="a">Merge сохраняет историю. Rebase переписывает хеши — только для своих, неопубликованных веток.</span><span class="tap">показать ответ →</span></button>
+  </div>
+  <div class="nextup" style="margin-top:auto">
+    <div><b>Дальше: углубиться и проверить себя</b><br><span>Полный мануал — конфиги, стратегии, метрики. Квиз — 12 вопросов с ответами и практика с конфликтом. Следом — CI/CD: что происходит с коммитом дальше.</span></div>
+    <a class="btn acc" href="../../materials/manuals/00-git-manual/">📖 Мануал</a>
+    <a class="btn" href="../../materials/manuals/00-git-quiz/">✅ Квиз</a>
+    <a class="btn ghost" href="../../#toc">☰ Оглавление курса</a>
+  </div>
+  <aside class="notes">
+    <p>Подвести итог одной фразой: «Три зоны, ветка — указатель, откат — revert для общих веток». Попросить одного добровольца повторить это своими словами.</p>
+    <p>Анонсировать тему 02: CI/CD начинается там, где заканчивается коммит.</p>
+  </aside>
+</section>
+
+</main>
+</div>
+
+<div class="progress" aria-hidden="true"><i></i></div>
+<nav class="controls" aria-label="Навигация по слайдам">
+  <a class="nav" href="../../#toc" title="Оглавление курса" aria-label="Оглавление курса">🏠</a>
+  <a class="nav opt" href="../../materials/manuals/00-git-manual/" title="Полный мануал" aria-label="Полный мануал">📖</a>
+  <span class="sep opt"></span>
+  <button id="prevB" title="Назад (←)" aria-label="Назад">←</button>
+  <span class="cnt" id="cnt" aria-live="polite"></span>
+  <button id="nextB" title="Далее (→)" aria-label="Далее">→</button>
+  <span class="sep opt"></span>
+  <button id="menuB" title="Все слайды (M)" aria-label="Список слайдов">☰</button>
+  <button id="notesB" class="opt" title="Заметки лектора (N)" aria-label="Заметки лектора">🗒</button>
+  <button id="presB" class="opt" title="Режим докладчика (P)" aria-label="Режим докладчика">🎤</button>
+  <button id="fsB" class="opt" title="Полный экран (F)" aria-label="Полный экран">⛶</button>
+</nav>
+<div class="menu" id="menu" role="dialog" aria-label="Список слайдов"></div>
+<div class="notes-panel" id="notesP" aria-live="polite"></div>
+
+<script src="../../assets/deck.js"></script>
+<script src="../../assets/cursus.js"></script>
+<script src="slides.js"></script>
+</body>
+</html>
