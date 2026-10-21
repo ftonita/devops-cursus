@@ -15,6 +15,10 @@
 <style>
 /* штрихи только этой колоды: состояния узлов симулятора, мини-визуализации, «было/стало» для антипаттернов */
 .btn:disabled { opacity: .45; cursor: default; }
+.viz.roomy { justify-content: center; gap: 22px; }
+.viz.roomy .ent { padding: 22px 24px; gap: 18px; }
+.viz.roomy .ent .ei { width: 52px; height: 52px; font-size: 27px; }
+.viz.roomy .ent .ed { font-size: 18px; }
 .sim .sr .st { min-height: 22px; font-size: 15px; }
 .sim .sr .brk { margin-top: 6px; font: 700 14px var(--sans); color: #be123c; background: #fff; border: 1px dashed #fecdd3; border-radius: 9px; padding: 4px 8px; cursor: pointer; }
 .sim .sr .brk[aria-pressed="true"] { background: #fff1f2; border-style: solid; border-color: #be123c; }
@@ -33,11 +37,11 @@
 .fix b { font-size: 20px; line-height: 1.25; }
 .fix .x { font-size: 17px; color: #be123c; }
 .fix .y { font-size: 17px; color: #0e7a43; }
-.dora-in { display: flex; flex-direction: column; gap: 6px; }
+.dora-in { display: flex; flex-direction: column; gap: 12px; justify-content: center; padding: 22px 26px; }
 .dora-in .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-.dora-in .row b { font-size: 19px; }
-.dora-in .row output { font: 800 26px var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; }
-.dora-in small { font-size: 15px; color: var(--ink2); }
+.dora-in .row b { font-size: 21px; }
+.dora-in .row output { font: 800 30px var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.dora-in small { font-size: 17px; color: var(--ink2); }
 </style>
 </head>
 <body class="theme-cicd">
@@ -124,7 +128,7 @@
             name: production
       </script>
     </div>
-    <div class="r viz">
+    <div class="r viz roomy">
       <div class="ent dom-gr" data-k="test"><div class="ei">🧪</div><div><div class="et">Test</div><div class="ed">Быстрые проверки идут первыми: ошибка видна через минуты, а не после деплоя.</div></div></div>
       <div class="ent dom-gr" data-k="package"><div class="ei">📦</div><div><div class="et">Package</div><div class="ed">Образ собирается один раз и тегируется SHA коммита. Дальше едет только он.</div></div></div>
       <div class="ent dom-gr" data-k="deploy"><div class="ei">🚀</div><div><div class="et">Deploy</div><div class="ed">Прод защищён окружением production: без одобрения job не стартует.</div></div></div>
@@ -270,7 +274,7 @@
         <p id="stDesc" class="ed" style="font-size:18px;"></p>
         <p id="stPrice" class="ed" style="font-size:18px; color:var(--ink);"></p>
       </div>
-      <div class="card"><h3>Откат в каждой стратегии</h3><p class="ed" style="font-size:17px;">Rolling и Blue-Green — обычный деплой или переключение назад. Canary — обнулить долю v2. Во всех трёх откат не героический, а рутинный.</p></div>
+      <div class="card" style="flex:1"><h3>Откат в каждой стратегии</h3><p class="ed" style="font-size:17px;">Rolling и Blue-Green — обычный деплой или переключение назад. Canary — обнулить долю v2. Во всех трёх откат не героический, а рутинный.</p></div>
     </div>
   </div>
   <aside class="notes">
@@ -298,7 +302,7 @@
         kubectl rollout status deployment/myapp -n production --timeout=300s
       </script>
     </div>
-    <div class="r viz">
+    <div class="r viz roomy">
       <div class="ent dom-fw" data-k="save"><div class="ei">📌</div><div><div class="et">Запомнить образ из кластера</div><div class="ed">Что реально крутится в проде до выката, а не «предыдущий коммит».</div></div></div>
       <div class="ent dom-fw" data-k="undo"><div class="ei">⏪</div><div><div class="et">Выкатить его снова</div><div class="ed">Тот же механизм деплоя, только с проверенным тегом.</div></div></div>
       <div class="ent dom-fw" data-k="check"><div class="ei">✅</div><div><div class="et">Дождаться rollout status</div><div class="ed">Без этой строки job зеленеет раньше, чем поды поднялись.</div></div></div>
@@ -315,17 +319,17 @@
 <section data-title="Метрики DORA: двигаем ползунки" class="dom-ng">
   <div class="sh">
     <div class="kicker"><span class="n"></span>Метрики</div>
-    <h2>DORA: скорость и стабильность растут вместе или не растут вовсе</h2>
+    <h2>DORA: скорость и стабильность двигаем вместе</h2>
     <p class="lede">Стартовые значения — ваша точка отсчёта. Двигайте ползунки и смотрите, что меняется вместе.</p>
   </div>
   <div class="body col">
-    <div class="grid g2">
+    <div class="grid g2" style="flex:1; grid-template-rows: 1fr 1fr;">
       <div class="card dora-in"><div class="row"><b>Deployment Frequency</b><output id="oFreq"></output></div><input type="range" id="dFreq" min="1" max="50" step="1" aria-label="Deployment Frequency: деплоев в неделю"><small>Как часто выкатываете в прод</small></div>
       <div class="card dora-in"><div class="row"><b>Lead Time for Changes</b><output id="oLead"></output></div><input type="range" id="dLead" min="1" max="336" step="1" aria-label="Lead Time: часов от коммита до прода"><small>Время от коммита до продакшена</small></div>
       <div class="card dora-in"><div class="row"><b>Change Failure Rate</b><output id="oCfr"></output></div><input type="range" id="dCfr" min="0" max="50" step="1" aria-label="Change Failure Rate: процент деплоев с инцидентом"><small>Доля деплоев, которые вызвали инцидент</small></div>
       <div class="card dora-in"><div class="row"><b>Failed Deployment Recovery Time</b><output id="oRest"></output></div><input type="range" id="dRest" min="1" max="72" step="1" aria-label="Recovery Time: часов до восстановления"><small>Как быстро восстанавливаетесь после неудачного выката</small></div>
     </div>
-    <div class="callout" id="dVerdict" aria-live="polite"></div>
+    <div class="callout" id="dVerdict" aria-live="polite" style="font-size:23px; padding:20px 24px;"></div>
   </div>
   <aside class="notes">
     <p>Попросите одного добровольца сдвинуть частоту вверх, а CFR оставить. Потом сдвинуть CFR вверх. Вывод: скорость, купленная ценой сбоев, — не улучшение.</p>
