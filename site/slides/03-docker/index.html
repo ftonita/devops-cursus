@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="only light">
+<meta name="description" content="Что такое контейнер, чем он отличается от ВМ, как собрать образ с кэшем и multi-stage, поднять стек через Compose и не открыть дыр в безопасности.">
+<title>Docker и контейнеризация — DevOps Cursus</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='10' width='52' height='44' rx='10' fill='%230f172a'/%3E%3Cpath d='m18 26 8 6-8 6M30 40h14' stroke='%23fff' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap&subset=cyrillic" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/deck.css">
+<link rel="stylesheet" href="../../assets/cursus.css">
+<style>
+/* Стили только этой колоды (общие компоненты — в cursus.css) */
+.stk { display: flex; flex-direction: column; gap: 8px; }
+.lv { border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 14px; background: #fff; text-align: center; font-weight: 700; font-size: 17px; }
+.lv small { display: block; font-weight: 500; font-size: 16px; color: var(--ink2); }
+.lv.rt { background: #f8fafc; }
+.lv.app { background: var(--dom-soft); border-color: var(--dom-line); }
+.lv.gos { background: #fff7ed; border-color: #fed7aa; }
+.lv.hv { background: #f1f5f9; }
+.lv.hw { background: #e2e8f0; }
+.lv.ker { background: #ecfdf3; border-color: #b3e2c8; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cmp { display: flex; flex-direction: column; gap: 16px; }
+.cmp-g { display: grid; grid-template-columns: 104px 1fr; gap: 8px 12px; align-items: center; }
+.cmp-g .cl { font-size: 17px; font-weight: 700; }
+.cmp-b { display: flex; flex-direction: column; gap: 6px; }
+.cmp-l { display: grid; grid-template-columns: 1fr 270px; gap: 12px; align-items: center; font-size: 16px; color: var(--ink2); }
+.cmp-l .meter { height: 12px; }
+.cmp-l .meter i { display: block; height: 100%; border-radius: 99px; }
+.lg { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; }
+
+.lyrs { display: flex; flex-direction: column; gap: 12px; }
+.lyr { display: grid; grid-template-columns: 34px 1fr auto 124px; gap: 12px; align-items: center; background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 16px 18px; transition: background .25s, border-color .25s; }
+.lyr .ix { font: 700 16px var(--mono); color: var(--mut); }
+.lyr code { font: 600 20px var(--mono); color: var(--ink); white-space: nowrap; }
+.tg { font: 600 15px var(--mono); color: #8a4f00; background: #fff4d6; border: 1px solid #f4d58a; border-radius: 8px; padding: 3px 8px; }
+.chip-hit, .chip-miss { font: 700 15px var(--mono); border-radius: 8px; padding: 2px 8px; border: 1px solid; white-space: nowrap; }
+.chip-hit { color: #0e7a43; background: #e7f7ee; border-color: #b3e2c8; }
+.chip-miss { color: #9a3412; background: #ffedd5; border-color: #fdba74; }
+.lyr .st { font: 700 15px var(--mono); padding: 4px 9px; border-radius: 8px; border: 1px solid transparent; text-align: center; }
+.lyr.hit { background: #f6fdf9; border-color: #b3e2c8; }
+.lyr.hit .st { color: #0e7a43; background: #e7f7ee; border-color: #b3e2c8; }
+.lyr.miss { background: #fff7ed; border-color: #fdba74; }
+.lyr.miss .st { color: #9a3412; background: #ffedd5; border-color: #fdba74; }
+.ctl2 { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn[aria-pressed="true"] { background: var(--dom-soft); border-color: var(--dom); color: var(--dom); }
+.sw.wide { font: 600 17px var(--sans); width: 100%; }
+.ctor-kpi { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ctor-kpi b { display: block; font-size: 34px; font-weight: 800; letter-spacing: -.02em; color: var(--dom); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.ctor-kpi b.slow { color: #b42318; }
+.ctor-kpi span { font-size: 16px; color: var(--ink2); }
+.ent[data-k]:focus-visible { outline: 3px solid var(--dk); outline-offset: 3px; }
+.hero .stats { flex-direction: column; align-items: stretch; max-width: 460px; justify-self: end; width: 100%; }
+.hero .stat { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 14px; padding: 18px 22px; }
+.hero .stat span { margin: 0; font-size: 18px; }
+.tagrow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.tagrow .card code { font: 700 18px var(--mono); color: var(--ink); }
+.tagrow .card p { margin: 6px 0 0; font-size: 16px; color: var(--ink2); }
+.tagrow .card.prod { border-color: #b3e2c8; background: #f6fdf9; }
+
+.netv { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+.net-row { display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 10px; align-items: center; }
+.nb { border: 2px solid var(--dom); border-radius: 16px; background: var(--dom-soft); padding: 18px 10px; text-align: center; font: 700 22px var(--mono); color: var(--dom); }
+.wire { height: 4px; border-radius: 4px; position: relative; background: #cbd5e1; }
+.wire b { position: absolute; left: 50%; top: -34px; transform: translateX(-50%); white-space: nowrap; font: 700 15px var(--mono); }
+.wire.no { background: repeating-linear-gradient(90deg, #be123c 0 10px, transparent 10px 16px); }
+.wire.no b { color: #be123c; }
+.wire.ok { background: #0e8a4f; }
+.wire.ok b { color: #0e7a43; }
+
+.code-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+ul.ticks li { display: block; position: relative; padding-left: 38px; }
+ul.ticks li::before { position: absolute; left: 0; top: 1px; }
+.jail.big td, .jail.big th { padding: 15px 14px; font-size: 19px; }
+.jail.big th { font-size: 15px; }
+.jail.mid td { padding: 12px 12px; font-size: 18px; }
+.jail.mid th { font-size: 15px; padding: 8px 12px; }
+body.flow .hero .stats { max-width: none; justify-self: stretch; }
+body.flow .hero .stat { grid-template-columns: 72px 1fr; padding: 12px 16px; }
+body.flow .hero .stat span { font-size: 15px; }
+body.flow .tagrow { grid-template-columns: 1fr; }
+body.flow .ctor-kpi b { font-size: 26px; }
+.jail.big td code.i { font-size: 17px; }
+</style>
+</head>
+<body class="theme-docker">
+<noscript><div class="noscript">Для презентации нужен JavaScript. Текстовая версия — <a href="../../materials/manuals/03-docker-manual/">мануал</a>.</div></noscript>
+<div class="stage">
+<main class="deck" id="deck">
+
+<!-- ======================= 01 ТИТУЛ ======================= -->
+<section data-title="Docker и контейнеризация" class="dom-dk">
+  <div class="sh"><div class="kicker"><span class="n"></span>Тема 03 · Docker и контейнеризация</div></div>
+  <div class="hero">
+    <div>
+      <h1>Один образ —<br>везде одинаково</h1>
+      <p class="hook">«У меня же работает» — классический спор: версии Python, Node и glibc на машинах разные. <em>Docker переносит окружение вместе с кодом.</em></p>
+      <p class="lede">За ≈ 15 минут: что такое контейнер, как собрать образ, который не раздувается, и как поднять весь стек одной командой.</p>
+      <div class="agenda">
+        <span><b>1</b>Зачем</span><span><b>2</b>Контейнер ≠ ВМ</span><span><b>3</b>Слои и кэш</span>
+        <span><b>4</b>Сеть и Compose</span><span><b>5</b>Данные</span><span><b>6</b>Безопасность</span>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>1</b><span>образ от ноутбука до production — байт в байт</span></div>
+      <div class="stat"><b>3</b><span>механизма ядра Linux под капотом: namespaces, cgroups, overlay FS</span></div>
+      <div class="stat"><b>~15</b><span>МБ вместо ~800 МБ: Go-сервис после multi-stage</span></div>
+    </div>
+  </div>
+  <div class="hint"><kbd>→</kbd> далее · <kbd>F</kbd> полный экран · <kbd>P</kbd> режим докладчика · <kbd>M</kbd> меню</div>
+  <aside class="notes">
+    <p>Начать с обещания: один образ одинаково работает на ноутбуке, в CI и в проде. Спросить зал, кто хоть раз слышал «у меня работает», и дать пару секунд на реакцию.</p>
+  </aside>
+</section>
+
+<!-- ======================= 02 БОЛЬ → РЕШЕНИЕ ======================= -->
+<section data-title="Зачем это нужно" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Зачем</div>
+    <h2>Окружение должно ехать вместе с кодом</h2>
+    <p class="lede">Без этого зависимость от машины живёт в головах людей, а не в репозитории.</p>
+  </div>
+  <div class="body col center-v">
+    <div class="pain">
+      <div class="was"><h3>😖 Без контейнеров</h3><ul><li>Версии Python, Node и glibc различаются по машинам</li><li>Инструкция по настройке устаревает раньше, чем её дочитали</li><li>Два сервиса на одном хосте спорят за версии пакетов</li></ul></div>
+      <div class="arrow">→</div>
+      <div class="now"><h3>😌 С Docker</h3><ul><li>Окружение описано <code class="i">Dockerfile</code> в том же репозитории</li><li>Один и тот же образ идёт через CI, staging и production</li><li>Весь стек поднимается командой <code class="i">docker compose up</code></li></ul></div>
+    </div>
+    <div class="analogy" style="margin-top:22px"><span class="ai">📦</span><div><span class="al">Аналогия</span>Как опломбированная коробка: содержимое не пересобирают по дороге от склада до магазина.</div></div>
+    <div class="callout" style="margin-top:6px">Docker решает упаковку и запуск на <b>одной машине</b>. Раскатка на 40 серверов, самовосстановление и автомасштабирование — задача оркестратора. Об этом в конце колоды.</div>
+  </div>
+  <aside class="notes"><p>Левая колонка — то, что знакомо каждому. Правая — что меняется. Подчеркнуть: один и тот же образ байт в байт идёт через CI, staging и production, никаких пересборок под окружение.</p></aside>
+</section>
+
+<!-- ======================= 03 КОНТЕЙНЕР VS ВМ (переключатель) ======================= -->
+<section data-title="Контейнер и ВМ: что внутри" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Контейнеры vs ВМ</div>
+    <h2>Контейнер — процесс с границами, а не мини-ВМ</h2>
+    <p class="lede">Переключите режим: видно, что несёт с собой каждая технология.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <div class="seg" data-group="vmct" role="group" aria-label="Что показать">
+        <button data-tab="vm" data-default>Виртуальная машина</button>
+        <button data-tab="ct">Контейнер</button>
+      </div>
+      <div data-pane="vm" data-group="vmct" class="stk">
+        <div class="row2"><div class="lv app">Приложение A</div><div class="lv app">Приложение B</div></div>
+        <div class="row2"><div class="lv gos">Гостевая ОС 1<small>полное ядро, ~ГБ</small></div><div class="lv gos">Гостевая ОС 2<small>полное ядро, ~ГБ</small></div></div>
+        <div class="lv hv">Гипервизор</div>
+        <div class="lv hw">Физический хост</div>
+      </div>
+      <div data-pane="ct" data-group="vmct" class="stk">
+        <div class="row2"><div class="lv app">Контейнер A<small>приложение + libs</small></div><div class="lv app">Контейнер B<small>приложение + libs</small></div></div>
+        <div class="lv rt">Container runtime<small>namespaces + cgroups</small></div>
+        <div class="lv ker">Одно общее ядро Linux<small>хоста, без своей ОС</small></div>
+        <div class="lv hw">Физический хост</div>
+      </div>
+      <div class="card" style="margin-top:14px"><p class="muted" style="margin:0">У каждой ВМ — своя ОС целиком. У контейнера ОС нет: только приложение с библиотеками поверх общего ядра хоста.</p></div>
+    </div>
+    <div class="r">
+      <div class="card">
+        <h3>Ресурсы и изоляция</h3>
+        <div class="cmp" style="margin-top:12px">
+          <div class="cmp-g"><span class="cl">Размер</span><div class="cmp-b">
+            <div class="cmp-l"><div class="meter"><i style="width:92%;background:#64748b"></i></div><span>ВМ: гигабайты</span></div>
+            <div class="cmp-l"><div class="meter"><i style="width:12%;background:var(--dom)"></i></div><span>Контейнер: десятки–сотни МБ</span></div>
+          </div></div>
+          <div class="cmp-g"><span class="cl">Старт</span><div class="cmp-b">
+            <div class="cmp-l"><div class="meter"><i style="width:88%;background:#64748b"></i></div><span>ВМ: десятки секунд–минуты</span></div>
+            <div class="cmp-l"><div class="meter"><i style="width:6%;background:var(--dom)"></i></div><span>Контейнер: миллисекунды–секунды</span></div>
+          </div></div>
+          <div class="cmp-g"><span class="cl">Плотность</span><div class="cmp-b">
+            <div class="cmp-l"><div class="meter"><i style="width:14%;background:#64748b"></i></div><span>ВМ: единицы–десятки</span></div>
+            <div class="cmp-l"><div class="meter"><i style="width:88%;background:var(--dom)"></i></div><span>Контейнер: сотни</span></div>
+          </div></div>
+          <div class="cmp-g"><span class="cl">Граница</span><div class="cmp-b">
+            <div class="cmp-l"><div class="meter"><i style="width:92%;background:#64748b"></i></div><span>ВМ: жёсткая, аппаратная</span></div>
+            <div class="cmp-l"><div class="meter"><i style="width:40%;background:var(--dom)"></i></div><span>Контейнер: мягкая, на уровне ядра</span></div>
+          </div></div>
+        </div>
+        <p class="muted small" style="margin:16px 0 0"><span class="lg" style="background:#64748b"></span>ВМ <span class="lg" style="background:var(--dom);margin-left:10px"></span>контейнер · шкалы условные, точные числа — в мануале.</p>
+      </div>
+      <div class="callout">Стандартная продакшен-схема — <b>контейнеры внутри ВМ</b>: ВМ даёт границу между клиентами, контейнеры дают упаковку и плотность.</div>
+    </div>
+  </div>
+  <aside class="notes"><p>Сначала показать стек ВМ: у каждого приложения своя ОС. Переключить на контейнер и сказать: ядро одно, а процесс — обычный, просто с ограничениями. Итог: контейнер мягче по изоляции, поэтому для жёсткой границы между клиентами ставят ВМ.</p></aside>
+</section>
+
+<!-- ======================= 04 ЧЕТЫРЕ СУЩНОСТИ ======================= -->
+<section data-title="Четыре сущности" class="dom-id">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Словарь</div>
+    <h2>Рецепт, образ, контейнер, склад</h2>
+    <p class="lede">Один образ порождает сколько угодно контейнеров — как один бинарник порождает процессы.</p>
+  </div>
+  <div class="body col">
+    <div class="grid g2">
+      <div class="ent"><div class="ei">📝</div><div><div class="et"><code>Dockerfile</code></div><div class="ed">Текстовый рецепт сборки. Аналогия: исходный код.</div></div></div>
+      <div class="ent"><div class="ei">🧱</div><div><div class="et">Image — образ</div><div class="ed">Неизменяемый набор слоёв и метаданных запуска. Аналогия: скомпилированный бинарник.</div></div></div>
+      <div class="ent"><div class="ei">▶️</div><div><div class="et">Container — контейнер</div><div class="ed">Запущенный экземпляр образа с writable-слоем сверху. Аналогия: процесс.</div></div></div>
+      <div class="ent"><div class="ei">🏬</div><div><div class="et">Registry — реестр</div><div class="ed">Хранилище образов с версиями и правами. Аналогия: артефакторий.</div></div></div>
+    </div>
+    <div class="steps-row" style="margin-top:18px" aria-label="Жизненный цикл образа">
+      <div class="sr"><span class="si">🔨</span><b><code class="i">docker build</code></b><span>Dockerfile + контекст → образ</span></div>
+      <div class="sr"><span class="si">⬆️</span><b><code class="i">docker push</code></b><span>образ → реестр</span></div>
+      <div class="sr"><span class="si">⬇️</span><b><code class="i">docker pull</code></b><span>реестр → любой хост</span></div>
+      <div class="sr"><span class="si">▶️</span><b><code class="i">docker run</code></b><span>образ → контейнер</span></div>
+    </div>
+    <div class="callout" style="margin-top:14px"><b>Почему образ переносим.</b> Формат образа, runtime и протокол реестра стандартизированы OCI. Образ, собранный Docker, запустится в containerd, CRI-O или Podman.</div>
+  </div>
+  <aside class="notes"><p>Главная мысль: образ неизменяем, контейнер — его запущенная копия. Аналогии из обычной разработки помогают: исходник, бинарник, процесс, артефакторий. Затем пройти ряд команд: build → push → pull → run — это весь жизненный цикл образа. Про OCI сказать одной фразой, без подробностей.</p></aside>
+</section>
+
+<!-- ======================= 05 ПУТЬ docker run (табы) ======================= -->
+<section data-title="Путь от docker run" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Архитектура</div>
+    <h2>Что происходит после docker run</h2>
+    <p class="lede">Нажмите на этап: кто за него отвечает.</p>
+  </div>
+  <div class="body col">
+    <div class="steps-row" data-group="run">
+      <button class="sr" data-tab="cli" data-default><span class="si">📟</span><b>docker CLI</b><span>тонкий клиент</span></button>
+      <button class="sr" data-tab="d"><span class="si">🧠</span><b>dockerd</b><span>демон</span></button>
+      <button class="sr" data-tab="cd"><span class="si">⚙️</span><b>containerd</b><span>жизненный цикл</span></button>
+      <button class="sr" data-tab="rc"><span class="si">📦</span><b>runc</b><span>запуск процесса</span></button>
+    </div>
+    <div class="card" data-pane="cli" data-group="run"><h3>docker CLI</h3><p>Всего лишь тонкий клиент: отправляет HTTP-запросы демону через Unix-сокет <code class="i">/var/run/docker.sock</code>.</p></div>
+    <div class="card" data-pane="d" data-group="run"><h3>dockerd</h3><p>Владелец всего состояния: образов, контейнеров, сетей и томов. Сборку отдаёт BuildKit. Работает от root.</p></div>
+    <div class="card" data-pane="cd" data-group="run"><h3>containerd</h3><p>Управляет жизненным циклом контейнеров и образов. Отдельный проект CNCF, который Kubernetes использует напрямую.</p></div>
+    <div class="card" data-pane="rc" data-group="run"><h3>runc</h3><p>Эталонная реализация OCI Runtime Spec: разворачивает namespaces и cgroups и запускает ваш процесс.</p></div>
+    <div class="callout">Запомните: <b>dockerd работает от root</b>. Поэтому доступ к сокету равен root-доступу к хосту. Вернёмся к этому в разделе про безопасность.</div>
+    <script type="text/x-code" data-lang="bash" data-title="docker ps под капотом — обычный HTTP-запрос к сокету" data-cls="sm">
+      curl --unix-socket /var/run/docker.sock http://localhost/containers/json
+    </script>
+  </div>
+  <aside class="notes"><p>Пройти этапы слева направо по стрелке. Ключевой момент — root у демона и сокет. Это станет главным аргументом в разделе про безопасность.</p></aside>
+</section>
+
+<!-- ======================= 06 КОНСТРУКТОР: СЛОИ И КЭШ (JS) ======================= -->
+<section data-title="Конструктор: слои и кэш" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Сборка и кэш</div>
+    <h2>Порядок инструкций решает, что пересобирается</h2>
+    <p class="lede">Меняйте код или зависимости кнопками и смотрите, какие слои уйдут в пересборку.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <div class="lyrs" id="lyrs" role="list" aria-label="Слои образа"></div>
+    </div>
+    <div class="r">
+      <button class="sw wide" id="ordSw" aria-pressed="false"><span class="knob"></span>Код копируем раньше манифестов</button>
+      <div class="ctl2">
+        <button class="btn ghost sm" id="edSrc" aria-pressed="false">✎ Правка кода</button>
+        <button class="btn ghost sm" id="edPkg" aria-pressed="false">✎ Новая зависимость</button>
+        <button class="btn ghost sm" id="rsB">⟲ Сброс</button>
+      </div>
+      <div class="card" aria-live="polite">
+        <div class="ctor-kpi">
+          <div><b id="ctorCount"></b><span>слоёв пересобрано</span></div>
+          <div><b id="ctorTime"></b><span>примерно на сборку</span></div>
+        </div>
+        <p class="muted" id="ctorNote" style="margin:10px 0 0"></p>
+      </div>
+      <div class="card"><p class="muted" style="margin:0;line-height:1.7"><span class="chip-hit">из кэша</span> — слой не менялся. <span class="chip-miss">пересобран</span> — изменился сам или слой выше. <span class="tg">долго</span> — дорогой шаг.</p></div>
+      <div class="callout">Кэш рвётся с <b>первого</b> изменённого слоя и тянет за собой всё ниже. Поэтому редко меняющееся — выше.</div>
+    </div>
+  </div>
+  <aside class="notes"><p>Сначала ничего не трогать: всё из кэша. Нажать «Правка кода» при порядке манифестов первыми — пересобрались два слоя. Включить переключатель «код раньше манифестов» и повторить: npm ci пересобирается тоже. Справа видно цену: ~10 секунд против 2–3 минут на каждую правку (оценки из мануала).</p></aside>
+</section>
+
+<!-- ======================= 07 MULTI-STAGE (переключатель + код) ======================= -->
+<section data-title="Multi-stage: размер до и после" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Multi-stage</div>
+    <h2>Компилятор остаётся на стадии сборки</h2>
+    <p class="lede">Переключите режим: сравните размер образа до и после.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <script type="text/x-code" data-lang="text" data-title="Dockerfile" data-cls="sm">
+        #@build
+        FROM golang:1.26-bookworm AS build
+        WORKDIR /src
+        COPY go.mod go.sum ./
+        RUN --mount=type=cache,target=/go/pkg/mod go mod download
+        COPY . .
+        RUN CGO_ENABLED=0 go build -o /out/api ./cmd/api
+        #@final
+        FROM gcr.io/distroless/static-debian12:nonroot
+        COPY --from=build /out/api /api
+        USER nonroot:nonroot
+        ENTRYPOINT ["/api"]
+      </script>
+    </div>
+    <div class="r">
+      <div class="seg" data-group="size" role="group" aria-label="Режим сборки">
+        <button data-tab="single" data-default>Один образ</button>
+        <button data-tab="multi">Multi-stage</button>
+      </div>
+      <div class="card" data-pane="single" data-group="size">
+        <h3>Один образ: тулчейн внутри</h3>
+        <div class="meter" style="margin:12px 0 8px"><i style="width:100%;background:#be123c"></i></div>
+        <p>≈ 800 МБ — размер стадии <code class="i">build</code>. В образе остаются компилятор, исходники и инструменты сборки.</p>
+      </div>
+      <div class="card" data-pane="multi" data-group="size">
+        <h3>Multi-stage: только бинарник</h3>
+        <div class="meter" style="margin:12px 0 8px"><i style="width:2%;background:#0e8a4f;min-width:6px"></i></div>
+        <p>≈ 15 МБ — в <code class="i">distroless/static</code> попадает только бинарник через <code class="i">COPY --from=build</code>. На той же шкале это 2% полосы.</p>
+      </div>
+      <div class="callout">Стадии, которые не нужны для <code class="i">--target</code>, не собираются вовсе. Независимые стадии BuildKit строит параллельно.</div>
+    </div>
+  </div>
+  <aside class="notes"><p>Открыть код: стадия build тяжёлая, финальная — почти пустая. Переключить режимы: полоса 800 МБ против полоски в 15 МБ. Объяснить, что single-stage образ с тулчейном весит столько же, сколько стадия сборки.</p></aside>
+</section>
+
+<!-- ======================= 08 СЕТЬ (переключатель) ======================= -->
+<section data-title="Сеть: кто кого видит" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Сети</div>
+    <h2>В своей сети контейнеры находят друг друга по имени</h2>
+    <p class="lede">Переключите сеть и посмотрите, достучится ли <code class="i">api</code> до <code class="i">db</code> по имени.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <div class="seg" data-group="net" role="group" aria-label="Тип сети">
+        <button data-tab="bridge" data-default>bridge по умолчанию</button>
+        <button data-tab="user">своя user-defined</button>
+      </div>
+      <div data-pane="bridge" data-group="net" class="netv">
+        <div class="net-row"><div class="nb">api</div><div class="wire no"><b>db:5432 ✕</b></div><div class="nb">db</div></div>
+        <div class="card"><p>Во встроенной сети контейнеры друг друга <b>по имени не видят</b>. Адрес соседа приходится искать вручную.</p></div>
+      </div>
+      <div data-pane="user" data-group="net" class="netv">
+        <div class="net-row"><div class="nb">api</div><div class="wire ok"><b>postgres://db:5432 ✓</b></div><div class="nb">db</div></div>
+        <div class="card"><p>В user-defined bridge Docker поднимает встроенный DNS: имя сервиса резолвится, IP не нужен.</p></div>
+      </div>
+    </div>
+    <div class="r">
+      <table class="jail mid">
+        <thead><tr><th>Драйвер</th><th>Когда</th></tr></thead>
+        <tbody>
+          <tr><td>bridge</td><td>одиночные контейнеры на одном хосте</td></tr>
+          <tr><td>user-defined</td><td>группа сервисов, DNS по имени</td></tr>
+          <tr><td>host</td><td>сеть хоста, изоляции нет</td></tr>
+          <tr><td>none</td><td>полностью без сети</td></tr>
+        </tbody>
+      </table>
+      <div class="callout"><code class="i">-p 127.0.0.1:8080:3000</code> публикует порт только на localhost. Без IP-префикса порт открыт наружу.</div>
+    </div>
+  </div>
+  <aside class="notes"><p>Переключить с bridge на user-defined и сказать: это ровно то, что делает Compose автоматически. Подчеркнуть, что порт публикуют только для входа извне, а соседи общаются по имени внутри сети.</p></aside>
+</section>
+
+<!-- ======================= 09 COMPOSE (клик по сервису) ======================= -->
+<section data-title="Compose: сервисы, сеть, тома" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Compose</div>
+    <h2>Весь стек — в одном файле</h2>
+    <p class="lede">Нажмите на сервис, чтобы увидеть его конфиг из примера мануала.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <div class="steps-row svc-tabs" data-group="svc">
+        <button class="sr" data-tab="api" data-default><span class="si">🟦</span><b>api</b><span>приложение</span></button>
+        <button class="sr" data-tab="db"><span class="si">🐘</span><b>db</b><span>postgres:17-alpine</span></button>
+        <button class="sr" data-tab="cache"><span class="si">🧰</span><b>cache</b><span>redis:7-alpine</span></button>
+      </div>
+      <div data-pane="api" data-group="svc">
+        <script type="text/x-code" data-lang="yaml" data-title="compose.yaml" data-cls="sm">
+          api:
+            build:
+              context: .
+              target: runtime
+            image: myapp:dev
+            ports:
+              - "127.0.0.1:8080:3000"
+            environment:
+              DATABASE_URL: postgres://app:app@db:5432/app
+              REDIS_URL: redis://cache:6379
+            depends_on:
+              db:
+                condition: service_healthy
+            restart: unless-stopped
+        </script>
+      </div>
+      <div data-pane="db" data-group="svc">
+        <script type="text/x-code" data-lang="yaml" data-title="compose.yaml" data-cls="sm">
+          db:
+            image: postgres:17-alpine
+            environment:
+              POSTGRES_USER: app
+              POSTGRES_PASSWORD: app
+              POSTGRES_DB: app
+            volumes:
+              - pgdata:/var/lib/postgresql/data
+            healthcheck:
+              test: ["CMD-SHELL", "pg_isready -U app -d app"]
+              interval: 5s
+              retries: 10
+        </script>
+      </div>
+      <div data-pane="cache" data-group="svc">
+        <script type="text/x-code" data-lang="yaml" data-title="compose.yaml" data-cls="sm">
+          cache:
+            image: redis:7-alpine
+            command: ["redis-server", "--save", "", "--appendonly", "no"]
+        </script>
+      </div>
+    </div>
+    <div class="r">
+      <div class="card"><h3>Что важно в схеме</h3>
+        <ul class="ticks good" style="margin-top:10px"><li>Compose сам создаёт сеть: <code class="i">api</code> ходит к <code class="i">db:5432</code> по имени</li><li><code class="i">db</code> не публикует порт наружу</li><li><code class="i">depends_on</code> с <code class="i">service_healthy</code> ждёт готовности БД</li></ul>
+      </div>
+      <div class="card"><h3>Тома</h3><p class="muted">Данные <code class="i">pgdata</code> живут в named volume и переживают <code class="i">docker compose down</code>. Удаляются только с <code class="i">-v</code>.</p></div>
+    </div>
+  </div>
+  <aside class="notes"><p>Кликнуть по api: показать ключ build, порт на localhost, строку подключения с именем db. Затем db: порт не публикуется, данные в томе, healthcheck. Ключа version нет: он устарел и игнорируется.</p></aside>
+</section>
+
+<!-- ======================= 10 ТОМА (клик → код) ======================= -->
+<section data-title="Данные и тома" class="dom-us" data-steps="named,bind">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Данные</div>
+    <h2>Данные переживают контейнер только в томах</h2>
+    <p class="lede">Writable-слой исчезает вместе с <code class="i">docker rm</code>. Нажмите на тип хранения, чтобы увидеть флаг.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <script type="text/x-code" data-lang="bash" data-title="terminal" data-cls="grow sm">
+        docker run -d \
+        #@named
+          --mount type=volume,src=pgdata,dst=/var/lib/postgresql/data \
+        #@bind
+          --mount type=bind,src="$PWD/postgresql.conf",\
+            dst=/etc/postgresql.conf,ro \
+          postgres:17
+      </script>
+    </div>
+    <div class="r viz">
+      <div class="ent dom-us" data-k="named"><div class="ei">💾</div><div><div class="et">Named volume</div><div class="ed">Управляется Docker. Данные БД и загрузки в проде.</div></div></div>
+      <div class="ent dom-us" data-k="bind"><div class="ei">📁</div><div><div class="et">Bind mount</div><div class="ed">Путь с хоста. Удобно для исходников в dev, в проде опасно.</div></div></div>
+      <div class="ent dom-us"><div class="ei">⚡</div><div><div class="et">tmpfs</div><div class="ed">Только в RAM. Секреты и временные файлы, которые не должны попасть на диск.</div></div></div>
+      <div class="callout">Синтаксис <code class="i">--mount</code> явнее <code class="i">-v</code>: опечатка в пути не создаст пустой каталог на хосте молча.</div>
+    </div>
+  </div>
+  <aside class="notes"><p>Три механизма, три задачи. Кликнуть named volume — подсветится флаг с томом. Кликнуть bind — флаг с проброшенным файлом. Подчеркнуть: bind в проде привязывает контейнер к структуре каталогов хоста.</p></aside>
+</section>
+
+<!-- ======================= 11 ТЕГ VS DIGEST ======================= -->
+<section data-title="Тег или digest" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Реестры</div>
+    <h2>В production деплоим digest, а не тег</h2>
+    <p class="lede">Тег — ярлык, который можно перевесить. Digest — адрес по содержимому.</p>
+  </div>
+  <div class="body col">
+    <div class="versus">
+      <div class="vcard bad">
+        <div class="vh"><span class="big">⚠️</span><div><h3>Плавающий тег</h3><small>latest, main</small></div></div>
+        <ul class="ticks">
+          <li>Сегодня <code class="i">myapp</code> указывает на один образ, завтра — на другой</li>
+          <li>Два хоста, сделавшие pull в разное время, работают на разных версиях</li>
+          <li>Откат ненадёжен: откатываться не на что</li>
+        </ul>
+      </div>
+      <div class="vs">VS</div>
+      <div class="vcard good">
+        <div class="vh"><span class="big">🔒</span><div><h3>Digest или SHA коммита</h3><small>неизменяемая координата</small></div></div>
+        <ul class="ticks good">
+          <li><code class="i">myapp@sha256:9b2c…</code> — адрес по содержимому, не меняется</li>
+          <li>Деплой ссылается на одну и ту же сборку на любом хосте</li>
+          <li>Теги оставляем людям для чтения</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tagrow" style="margin-top:18px">
+      <div class="card prod"><code>app:sha-9b2c1f4</code><p>Уникальный и неизменяемый: на него опирается деплой в production.</p></div>
+      <div class="card"><code>app:1.4.2</code><p>Семантическая версия — чтобы людям было удобно читать релизы.</p></div>
+      <div class="card"><code>app:main</code><p>Плавающий тег — только для dev- и staging-стендов.</p></div>
+    </div>
+    <p class="punch">Тег — для людей, digest — для деплоя.</p>
+  </div>
+  <aside class="notes"><p>Спросить зал, какой тег стоит в их проде. Затем показать разницу между изменяемым тегом и digest. Правило: latest — только для песочниц.</p></aside>
+</section>
+
+<!-- ======================= 12 БЕЗОПАСНОСТЬ (flip) ======================= -->
+<section data-title="Безопасность: три дыры" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Безопасность</div>
+    <h2>Безопасность начинается внутри образа</h2>
+    <p class="lede">Нажмите на карточку: что ломается и как правильно.</p>
+  </div>
+  <div class="body col">
+    <div class="qa">
+      <button class="flip" aria-expanded="false"><span class="q">Процесс запущен от root</span><span class="a">Ломается: компрометация приложения даёт root внутри контейнера, а при плохой конфигурации — и на хосте. Правильно: <code class="i">USER node</code> или non-root базовый образ.</span><span class="tap">показать ответ →</span></button>
+      <button class="flip" aria-expanded="false"><span class="q">Секрет в ARG или ENV</span><span class="a">Ломается: значение навсегда остаётся в слоях и видно в <code class="i">docker history</code>. Правильно: BuildKit-секрет на время одной инструкции.</span><span class="tap">показать ответ →</span></button>
+      <button class="flip" aria-expanded="false"><span class="q">Сокет или --privileged</span><span class="a">Ломается: доступ к <code class="i">docker.sock</code> равен root на хосте, <code class="i">--privileged</code> снимает изоляцию. Правильно: rootless, точечные <code class="i">--cap-add</code>.</span><span class="tap">показать ответ →</span></button>
+    </div>
+    <div class="code-pair">
+      <script type="text/x-code" data-lang="text" data-title="Dockerfile" data-cls="sm">
+        RUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm ci
+      </script>
+      <script type="text/x-code" data-lang="bash" data-title="сборка" data-cls="sm">
+        docker build --secret id=npmrc,src=$HOME/.npmrc -t myapp .
+      </script>
+    </div>
+    <div class="callout" style="margin-top:4px">В CI добавьте сканер образа (Trivy, Docker Scout, Grype) — <b>по digest</b>, а не по тегу. Найдены HIGH/CRITICAL CVE — сборка падает.</div>
+  </div>
+  <aside class="notes"><p>Открыть три карточки по очереди. Дать минуту на вопрос «почему не ARG». Показать секрет: он монтируется только на время RUN и в слой не попадает.</p></aside>
+</section>
+
+<!-- ======================= 13 АНТИПАТТЕРНЫ (таблица) ======================= -->
+<section data-title="Антипаттерны" class="dom-id">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Ошибки</div>
+    <h2>Что ломается → как правильно</h2>
+  </div>
+  <div class="body col">
+    <table class="jail big">
+      <thead><tr><th style="width:30%">Что видим</th><th style="width:36%">Что ломается</th><th>Как правильно</th></tr></thead>
+      <tbody>
+        <tr><td><code class="i">FROM node:latest</code></td><td>Сборка сегодня и завтра разная</td><td>Фиксировать тег, для критичного — digest</td></tr>
+        <tr><td><code class="i">COPY . .</code> перед <code class="i">npm ci</code></td><td>Любая правка кода пересобирает зависимости</td><td>Сначала манифесты, потом код</td></tr>
+        <tr><td>Нет <code class="i">.dockerignore</code></td><td><code class="i">.git</code> и <code class="i">.env</code> уезжают в контекст и образ</td><td>Файл рядом с Dockerfile</td></tr>
+        <tr><td><code class="i">CMD node main.js</code> (shell-форма)</td><td>SIGTERM до приложения не доходит, через 10 с SIGKILL</td><td><code class="i">CMD ["node", "main.js"]</code></td></tr>
+        <tr><td>Данные в writable-слое</td><td>Пересоздание контейнера стирает базу</td><td>Named volume для всего, что должно жить дольше</td></tr>
+        <tr><td><code class="i">docker run --privileged</code> «чтобы заработало»</td><td>Изоляция снята, контейнер управляет хостом</td><td>Точечные <code class="i">--cap-add</code> и понимание причины</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top:12px">Быстрая проверка Dockerfile на ревью: найдите <code class="i">latest</code>, <code class="i">USER</code> и секреты в <code class="i">ARG</code>/<code class="i">ENV</code>. Если чего-то нет — это вопрос к автору.</div>
+  </div>
+  <aside class="notes"><p>Идти по строкам сверху вниз, на каждой спрашивать: «видели такое?». Самая частая из них — COPY . . в начале и latest в проде. Сказать, что все шесть находятся на ревью почти в каждом первом Dockerfile.</p></aside>
+</section>
+
+<!-- ======================= 14 ГДЕ КОНЧАЕТСЯ DOCKER ======================= -->
+<section data-title="Где кончается Docker" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Дальше</div>
+    <h2>Docker — фундамент, оркестратор — следующий этаж</h2>
+    <p class="lede">Когда одного хоста и Compose мало, образ остаётся тем же. Меняется только то, что его запускает.</p>
+  </div>
+  <div class="body col">
+    <div class="grid g3" style="margin-top:auto">
+      <div class="card"><div class="big-num"><span class="n" style="font-size:40px">1</span></div><h3>docker run</h3><p class="muted">Один контейнер на одной машине.</p></div>
+      <div class="card"><div class="big-num"><span class="n" style="font-size:40px">2</span></div><h3>docker compose</h3><p class="muted">Несколько сервисов на одном хосте: локальная разработка и небольшой стенд.</p></div>
+      <div class="card"><div class="big-num"><span class="n" style="font-size:40px">3</span></div><h3>Оркестратор</h3><p class="muted">Kubernetes, Nomad, ECS: много узлов, самовосстановление, автомасштабирование.</p></div>
+    </div>
+    <div class="callout" style="margin-top:6px">Docker Compose не раскатывает на несколько хостов, не перезапускает нагрузку при падении узла и не делает rolling update с health-гейтами.</div>
+    <p class="punch" style="margin:12px 0 auto">Качество образа окупается дважды: <em>локально и в кластере.</em></p>
+  </div>
+  <aside class="notes"><p>Провести границу: Docker решает упаковку и запуск на одной машине, оркестратор — всё, что касается парка узлов. Анонсировать тему про Kubernetes как следующий шаг.</p></aside>
+</section>
+
+<!-- ======================= 15 ТЕСТ (.mc) ======================= -->
+<section data-title="Проверьте себя" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Проверка</div>
+    <h2>Два вопроса по тому, что мы разобрали</h2>
+  </div>
+  <div class="body col">
+    <div class="mc" data-correct="1">
+      <div class="q">Контейнер запущен с shell-формой <code class="i">CMD node main.js</code>. Что будет при <code class="i">docker stop</code>?</div>
+      <div class="opts">
+        <button>Приложение получит SIGTERM и завершится штатно</button>
+        <button>SIGTERM до приложения не дойдёт: PID 1 — /bin/sh. Через таймаут придёт SIGKILL</button>
+        <button>Контейнер остановится мгновенно, без таймаута</button>
+      </div>
+      <div class="why"><b>Почему так.</b> Shell-форма ставит оболочку PID 1, а она сигналы не пробрасывает. Exec-форма <code class="i">CMD ["node", …]</code> делает процесс PID 1, и он получает SIGTERM сам.</div>
+      <span class="score"></span>
+    </div>
+    <div class="mc" data-correct="1">
+      <div class="q">Где хранить данные Postgres, чтобы они пережили пересоздание контейнера?</div>
+      <div class="opts">
+        <button>В writable-слое контейнера</button>
+        <button>В named volume</button>
+        <button>В tmpfs, в оперативной памяти</button>
+      </div>
+      <div class="why"><b>Почему так.</b> Named volume управляется Docker и переживает <code class="i">docker rm</code>. Writable-слой исчезает вместе с контейнером, tmpfs живёт только в RAM.</div>
+      <span class="score"></span>
+    </div>
+  </div>
+  <aside class="notes"><p>Дать 20 секунд подумать на каждый вопрос, потом открыть разбор. Первый вопрос связывает сигналы и exec-форму, второй — типы хранения.</p></aside>
+</section>
+
+<!-- ======================= 16 ИТОГИ + CTA ======================= -->
+<section data-title="Итоги и что дальше" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Итоги</div>
+    <h2>Что вы теперь умеете</h2>
+  </div>
+  <div class="qa">
+    <button class="flip" aria-expanded="false"><span class="q">Чем контейнер отличается от ВМ?</span><span class="a">Это процесс на общем ядре хоста с namespaces и cgroups: быстрее и плотнее, граница мягче.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Почему зависимости ставятся раньше кода?</span><span class="a">Кэш рвётся с первого изменённого слоя. Манифесты отдельно — правка кода не трогает npm ci.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Что деплоим в production?</span><span class="a">Digest или тег с SHA коммита. latest годится только для песочниц.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">За счёт чего Go-образ худеет с ~800 до ~15 МБ?</span><span class="a">Multi-stage: компилятор остаётся в стадии build, в distroless копируется только бинарник.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Почему api не находит db по имени?</span><span class="a">Они в bridge по умолчанию. DNS по имени есть только в user-defined сети — её Compose создаёт сам.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Где кончается Docker?</span><span class="a">Docker упаковывает и запускает на одном хосте. Много узлов, самовосстановление и rolling update — оркестратор.</span><span class="tap">показать ответ →</span></button>
+  </div>
+  <div class="nextup" style="margin-top:auto">
+    <div style="flex:1;min-width:280px"><b>Дальше: Kubernetes</b><br><span>Тот же образ, но на кластере. А пока — мануал с готовыми Dockerfile и Compose и квиз с практикой.</span></div>
+    <a class="btn acc" href="../../materials/manuals/03-docker-manual/">📖 Мануал</a>
+    <a class="btn ghost" href="../../materials/manuals/03-docker-quiz/">✅ Квиз</a>
+    <a class="btn ghost" href="../../#toc">☰ Оглавление курса</a>
+  </div>
+  <aside class="notes"><p>Пройти шесть карточек и попросить зал ответить до открытия. Закрыть анонсом: мануал и квиз по ссылкам, дальше — Kubernetes.</p></aside>
+</section>
+
+</main>
+</div>
+
+<div class="progress" aria-hidden="true"><i></i></div>
+<nav class="controls" aria-label="Навигация по слайдам">
+  <a class="nav" href="../../#toc" title="Оглавление курса" aria-label="Оглавление курса">🏠</a>
+  <a class="nav opt" href="../../materials/manuals/03-docker-manual/" title="Полный мануал" aria-label="Полный мануал">📖</a>
+  <span class="sep opt"></span>
+  <button id="prevB" title="Назад (←)" aria-label="Назад">←</button>
+  <span class="cnt" id="cnt" aria-live="polite"></span>
+  <button id="nextB" title="Далее (→)" aria-label="Далее">→</button>
+  <span class="sep opt"></span>
+  <button id="menuB" title="Все слайды (M)" aria-label="Список слайдов">☰</button>
+  <button id="notesB" class="opt" title="Заметки лектора (N)" aria-label="Заметки лектора">🗒</button>
+  <button id="presB" class="opt" title="Режим докладчика (P)" aria-label="Режим докладчика">🎤</button>
+  <button id="fsB" class="opt" title="Полный экран (F)" aria-label="Полный экран">⛶</button>
+</nav>
+<div class="menu" id="menu" role="dialog" aria-label="Список слайдов"></div>
+<div class="notes-panel" id="notesP" aria-live="polite"></div>
+
+<script src="../../assets/deck.js"></script>
+<script src="../../assets/cursus.js"></script>
+<script src="slides.js"></script>
+</body>
+</html>

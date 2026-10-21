@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="only light">
+<meta name="theme-color" content="#f4f6fb">
+<meta name="description" content="DevOps Cursus — интерактивный курс по DevOps: Git, CI/CD, Docker, Git-workflow. Презентации с интерактивом, подробные мануалы и квизы для самопроверки.">
+<meta property="og:title" content="DevOps Cursus — интерактивный курс по DevOps">
+<meta property="og:description" content="От git commit до production: презентации с интерактивом, подробные мануалы и квизы.">
+<title>DevOps Cursus — интерактивный курс</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='10' width='52' height='44' rx='10' fill='%230f172a'/%3E%3Cpath d='m18 26 8 6-8 6M30 40h14' stroke='%23fff' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap&subset=cyrillic" rel="stylesheet">
+<link rel="stylesheet" href="assets/deck.css">
+<link rel="stylesheet" href="assets/cursus.css">
+</head>
+<body class="hubpage">
+<div class="hubwrap">
+  <header class="topbar">
+    <a class="brand" href="./"><i>&gt;_</i>DevOps Cursus</a>
+    <nav aria-label="Разделы">
+      <a class="keep" href="#toc">Оглавление</a>
+      <a href="#how">Как учиться</a>
+      <a href="#bonus">Бонус</a>
+      <a class="keep" href="materials/">Все мануалы</a>
+    </nav>
+  </header>
+
+  <section class="heroh">
+    <div>
+      <div class="kicker" style="--dom:#475569">Курс · менторская программа</div>
+      <h1 style="margin-top:12px">От <em>git commit</em><br>до production</h1>
+      <p class="lede">Короткие интерактивные презентации, чтобы <b>понять идею за 15 минут</b>, подробные мануалы, чтобы <b>разобраться до конца</b>, и квизы, чтобы <b>проверить себя</b>. Без воды и без «магии».</p>
+      <div class="cta">
+        <a class="btn acc" id="ctaStart" href="#toc" style="--accent:#0f172a;background:#0f172a">Начать с первой темы →</a>
+        <a class="btn ghost" href="materials/">Читать мануалы</a>
+      </div>
+      <div class="herostats" id="heroStats" aria-label="Курс в цифрах"></div>
+    </div>
+    <div class="pipeviz" aria-hidden="true">
+      <div class="pv-h"><i></i><i></i><i></i>&nbsp;pipeline · main</div>
+      <div class="pipe-row" style="--c:#d9480f;--c-soft:#fff3ec;--c-line:#ffd1b8;--dl:.1s"><div class="nodeh">🌳 commit <em>git</em></div><span class="ok">✓</span></div>
+      <div class="pipe-row" style="--c:#6d28d9;--c-soft:#f3eeff;--c-line:#d8c7fb;--dl:.5s"><div class="nodeh">🔀 pull request <em>review</em></div><span class="ok">✓</span></div>
+      <div class="pipe-row" style="--c:#6d28d9;--c-soft:#f3eeff;--c-line:#d8c7fb;--dl:.9s"><div class="nodeh">🔁 build + test <em>CI</em></div><span class="ok">✓</span></div>
+      <div class="pipe-row" style="--c:#1d63ed;--c-soft:#ebf1fe;--c-line:#bcd0fb;--dl:1.3s"><div class="nodeh">🐳 image <em>docker</em></div><span class="ok">✓</span></div>
+      <div class="pipe-row" style="--c:#0f766e;--c-soft:#e6f6f4;--c-line:#a9ded7;--dl:1.7s"><div class="nodeh">🚀 deploy <em>CD</em></div><span class="ok">✓</span></div>
+    </div>
+  </section>
+
+  <section class="sect" id="toc">
+    <h2>Оглавление</h2>
+    <p class="sub">Темы идут от базовых к продвинутым. Каждая — это презентация с интерактивом, мануал и квиз. Новые темы появляются по мере готовности.</p>
+    <div class="toc" id="tocGrid"></div>
+    <noscript><p>Для оглавления нужен JavaScript. Все материалы — <a href="materials/">здесь</a>.</p></noscript>
+  </section>
+
+  <section class="sect" id="how">
+    <h2>Как учиться</h2>
+    <p class="sub">Тема — это три шага. Можно пройти все, а можно взять только нужный.</p>
+    <div class="how">
+      <div class="card"><span class="hi">🎞️</span><h3>1. Презентация</h3><p>10–15 минут. Идея, аналогии и интерактивные схемы: щёлкайте, ломайте, пробуйте. <kbd>→</kbd> далее, <kbd>M</kbd> меню, <kbd>P</kbd> режим докладчика.</p></div>
+      <div class="card"><span class="hi">📖</span><h3>2. Мануал</h3><p>Полный материал: архитектура, конфиги, паттерны, ошибки и метрики. Читайте, когда нужно разобраться глубоко или вернуться за примером.</p></div>
+      <div class="card"><span class="hi">✅</span><h3>3. Квиз</h3><p>Вопросы-сценарии и практические задания. Сначала ответьте сами, потом сверьтесь с разбором.</p></div>
+    </div>
+  </section>
+
+  <section class="sect" id="bonus">
+    <h2>Бонус: практика</h2>
+    <p class="sub">Отдельные курсы, которые дополняют основную программу.</p>
+    <div class="bonus" id="bonusGrid"></div>
+  </section>
+
+  <footer class="hubfoot">
+    <span>© DevOps Cursus · материалы для менторской программы</span>
+    <span>
+      <a href="materials/">Мануалы</a> ·
+      <a href="materials/glossary/GLOSSARY/">Глоссарий</a> ·
+      <a href="materials/ROADMAP/">Роадмап</a> ·
+      <a href="https://github.com/ftonita/devops-cursus">GitHub</a>
+    </span>
+  </footer>
+</div>
+
+<script src="topics.js"></script>
+<script>
+(function () {
+  "use strict";
+  function el(h) { var d = document.createElement("div"); d.innerHTML = h.trim(); return d.firstChild; }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+  var T = window.TOPICS || [], ready = T.filter(function (t) { return t.status === "ready"; });
+
+  var slides = ready.reduce(function (a, t) { return a + (t.slides || 0); }, 0);
+  var mins = ready.reduce(function (a, t) { return a + (t.minutes || 0); }, 0);
+  var stats = [[ready.length, "тем готово"], [slides, "слайдов с интерактивом"], [T.length - ready.length, "тем в планах"]];
+  document.getElementById("heroStats").innerHTML = stats.map(function (s) { return "<div><b>" + s[0] + "</b><span>" + s[1] + "</span></div>"; }).join("");
+
+  var first = ready[0];
+  if (first) document.getElementById("ctaStart").href = "slides/" + first.id + "-" + first.slug + "/";
+
+  var grid = document.getElementById("tocGrid");
+  T.forEach(function (t) {
+    var cls = "tcard " + t.theme + " " + t.status, isReady = t.status === "ready";
+    var base = t.id + "-" + t.slug;
+    var meta = '<div class="meta"><span>' + esc(t.level) + "</span>" +
+      (isReady && t.slides ? "<span>" + t.slides + " слайдов</span>" : "") +
+      (isReady && t.minutes ? "<span>≈ " + t.minutes + " мин</span>" : "") + "</div>";
+    var html = '<article class="' + cls + '">' +
+      '<div class="tn"><b>' + t.id + '</b>Тема<span class="badge">' + (isReady ? "готово" : "скоро") + "</span></div>" +
+      '<div class="ti" aria-hidden="true">' + t.icon + "</div>" +
+      "<h3>" + esc(t.title) + "</h3><p>" + esc(t.pitch) + "</p>" +
+      (isReady && t.bullets ? "<ul>" + t.bullets.map(function (b) { return "<li>" + esc(b) + "</li>"; }).join("") + "</ul>" : "") +
+      meta +
+      (isReady ? '<div class="acts"><a class="btn" href="slides/' + base + '/">🎞 Презентация</a>' +
+        '<a class="btn ghost" href="materials/manuals/' + base + '-manual/">📖 Мануал</a>' +
+        (t.quiz === false ? "" : '<a class="btn ghost" href="materials/manuals/' + base + '-quiz/">✅ Квиз</a>') + "</div>" : "") +
+      "</article>";
+    grid.appendChild(el(html));
+  });
+
+  var bg = document.getElementById("bonusGrid");
+  (window.BONUS || []).forEach(function (b) {
+    bg.appendChild(el('<a class="tcard ready ' + b.theme + '" href="' + b.href + '"><div class="tn">' + esc(b.tag) + '</div><div class="ti" aria-hidden="true">' + b.icon +
+      "</div><h3>" + esc(b.title) + "</h3><p>" + esc(b.pitch) + '</p><div class="acts"><span class="btn">' + esc(b.label) + "</span></div></a>"));
+  });
+})();
+</script>
+</body>
+</html>

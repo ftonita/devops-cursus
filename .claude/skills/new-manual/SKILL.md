@@ -57,12 +57,23 @@ Call `quiz-builder` (foreground) to generate the companion
 `manuals/NN-topic-quiz.MD`. Skip this step only if the user explicitly
 said they don't want a quiz for this manual.
 
+## Step 3b — deck (интерактивная презентация)
+
+Call `deck-builder` (haiku, foreground; or `general-purpose` with `model: haiku`
+and the prompt "follow .claude/skills/deck-authoring") for `site/slides/NN-slug/`.
+Then run one design review on the result: a `general-purpose` agent with
+`model: opus` at medium effort that loads the `design:design-critique` and
+`design:accessibility-review` skills, looks at the screenshots from
+`python3 scripts/check-decks.py NN-slug --shots <dir>`, and applies fixes directly.
+Finally set the topic's entry in `site/topics.js` to `status: "ready"` and run
+`python3 scripts/check-decks.py --update-topics`.
+
 ## Step 4 — close out
 
 1. Set the topic's `ROADMAP.MD` status to ✅ (only reached if Step 2 ended
    with `VERDICT: READY`).
 2. Report back to the user (in Russian, per this repo's standing
-   convention): what was created (manual + quiz file paths), how many
+   convention): what was created (manual + quiz + deck paths), how many
    review rounds it took, and a one-line mention of any `[minor]` findings
    the reviewer left as-is. If the loop was cut off at the round cap,
    lead with that instead of burying it.

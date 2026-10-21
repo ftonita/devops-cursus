@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="only light">
+<meta name="description" content="CI/CD за 15 минут: как коммит превращается в релиз, какие бывают стратегии выката и как измерить, стало ли лучше.">
+<title>CI/CD: от коммита до production — DevOps Cursus</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='10' width='52' height='44' rx='10' fill='%230f172a'/%3E%3Cpath d='m18 26 8 6-8 6M30 40h14' stroke='%23fff' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap&subset=cyrillic" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/deck.css">
+<link rel="stylesheet" href="../../assets/cursus.css">
+<style>
+/* штрихи только этой колоды: состояния узлов симулятора, мини-визуализации, «было/стало» для антипаттернов */
+.btn:disabled { opacity: .45; cursor: default; }
+.viz.roomy { justify-content: center; gap: 22px; }
+.viz.roomy .ent { padding: 22px 24px; gap: 18px; }
+.viz.roomy .ent .ei { width: 52px; height: 52px; font-size: 27px; }
+.viz.roomy .ent .ed { font-size: 18px; }
+.sim .sr .st { min-height: 22px; font-size: 15px; }
+.sim .sr .brk { margin-top: 6px; font: 700 14px var(--sans); color: #be123c; background: #fff; border: 1px dashed #fecdd3; border-radius: 9px; padding: 4px 8px; cursor: pointer; }
+.sim .sr .brk[aria-pressed="true"] { background: #fff1f2; border-style: solid; border-color: #be123c; }
+.sim .sr .brk:disabled { opacity: .45; cursor: default; }
+.sim .sr.run { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.sim .sr.ok { border-color: #0e8a4f; background: #ecfdf3; }
+.sim .sr.bad { border-color: #be123c; background: #fff1f2; }
+.sim .sr.gate { border-color: #d97706; background: #fff8e6; }
+.sim .sr.skip { opacity: .45; }
+.cells { display: grid; grid-template-columns: repeat(20, 1fr); gap: 4px; }
+.cells i { height: 26px; border-radius: 6px; background: var(--soft); border: 1px solid var(--line); transition: background .3s, border-color .3s; }
+.cells i.v2 { background: var(--accent); border-color: var(--accent); }
+.cells.tall i { height: 72px; }
+#stBarI { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #a78bfa, var(--accent)); transition: width .6s ease; border-radius: 99px; }
+.fix { display: grid; gap: 6px; }
+.fix b { font-size: 20px; line-height: 1.25; }
+.fix .x { font-size: 17px; color: #be123c; }
+.fix .y { font-size: 17px; color: #0e7a43; }
+.dora-in { display: flex; flex-direction: column; gap: 12px; justify-content: center; padding: 22px 26px; }
+.dora-in .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.dora-in .row b { font-size: 21px; }
+.dora-in .row output { font: 800 30px var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.dora-in small { font-size: 17px; color: var(--ink2); }
+input[type=range] { height: 28px; cursor: pointer; }
+
+/* ревью: текст ≥ 16px в мелких общих компонентах, крупнее там, где было пусто */
+.sim .sr .st { font-size: 16px; }
+.sim .sr .brk { font-size: 16px; padding: 5px 10px; min-height: 30px; }
+.seg button, .tabs button { font-size: 17px; padding: 9px 16px; }
+.term .tt { font-size: 16px; }
+code.i { font-size: .92em; }
+.kpi { padding: 20px 22px; }
+.kpi b { font-size: 46px; color: var(--accent); }
+.kpi span { display: block; margin-top: 8px; font-size: 18px; line-height: 1.4; }
+.flowline.lg { font-size: 20px; gap: 10px; }
+.flowline.lg .q { padding: 8px 14px; border-radius: 11px; }
+.pane-big { min-height: 270px; }
+.pane-big h3 { font-size: 26px; }
+.hero .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hero .stat { min-width: 0; }
+body.flow .hero .stats { grid-template-columns: 1fr 1fr; }
+body.flow .pane-big { min-height: 0; }
+.pane-big p.ed { font-size: 21px !important; line-height: 1.45; margin: 0; }
+.pain.big h3 { font-size: 26px; }
+.pain.big ul { font-size: 22px; }
+.pain.big li { margin: 8px 0; }
+.pain.big .was, .pain.big .now { padding: 26px 32px; }
+.analogy.big { font-size: 21px; padding: 18px 22px; }
+.cards-big .card h3 { font-size: 24px; }
+.cards-big .card p.ed { font-size: 20px !important; line-height: 1.45; }
+.fill { flex: 1; min-height: 0; grid-auto-rows: 1fr; }
+.fix { align-content: center; }
+.fill > .card:not(.fix) { display: flex; flex-direction: column; justify-content: center; }
+.qa.fill .flip { min-height: 230px; }
+.nextup > div { flex: 1; min-width: 320px; }
+.fix b { font-size: 22px; }
+.fix .x, .fix .y { font-size: 19px; }
+.mc.big { padding: 26px 30px; gap: 16px; }
+.mc.big .q { font-size: 26px; }
+.mc.big .opts { gap: 12px; }
+.mc.big .opts button { font-size: 21px; padding: 14px 18px; }
+.mc.big .why { font-size: 19px; }
+.qa.fill .flip { padding: 20px 22px; }
+.flip .q { font-size: 21px; }
+.flip .a { font-size: 18px; }
+.flip .tap { font-size: 16px; }
+.st-info { display: flex; flex-direction: column; gap: 18px; justify-content: center; flex: 1; }
+.st-info h3 { font-size: 28px; margin: 0; }
+.st-info .row, .dora-in .row { padding: 0 !important; }
+.st-info .row { display: flex; justify-content: flex-start; gap: 14px; align-items: flex-start; font-size: 20px; line-height: 1.45; }
+.st-info .row .ei { width: 44px; height: 44px; font-size: 22px; }
+.st-info .row p { margin: 0; color: var(--ink2); }
+.st-info .row b { display: block; color: var(--ink); font-size: 16px; text-transform: uppercase; letter-spacing: .08em; }
+.cells i { background: #eef2f7; border-color: #64748b; }
+.sw-v1 { color: #64748b; }
+.code .t-com { color: #64748b; } .sw-v2 { color: var(--accent); }
+body.flow .kpi b { font-size: 30px; }
+body.flow .kpi span, body.flow .pain.big ul, body.flow .analogy.big, body.flow .fix .x, body.flow .fix .y,
+body.flow .pane-big p.ed, body.flow .cards-big .card p.ed, body.flow .mc.big .opts button, body.flow .st-info .row { font-size: 16px !important; }
+body.flow .pain.big h3, body.flow .pane-big h3, body.flow .mc.big .q, body.flow .st-info h3, body.flow .fix b, body.flow .cards-big .card h3 { font-size: 20px; }
+body.flow .flowline.lg { font-size: 16px; }
+body.flow .cells.tall i { height: 40px; }
+</style>
+</head>
+<body class="theme-cicd">
+<noscript><div class="noscript">Для презентации нужен JavaScript. Текстовая версия — <a href="../../materials/manuals/02-cicd-manual/">мануал</a>.</div></noscript>
+<div class="stage">
+<main class="deck" id="deck">
+
+<!-- ======================= 01 ТИТУЛ ======================= -->
+<section data-title="Титул" class="dom-id">
+  <div class="sh"><div class="kicker"><span class="n"></span>Тема 02 · CI/CD</div></div>
+  <div class="hero">
+    <div>
+      <h1>CI/CD:<br>релиз без созвонов</h1>
+      <p class="hook">Деплой — стрессовое событие, а откат занимает часы? <em>Это не судьба, а конвейер, которого ещё нет.</em></p>
+      <p class="lede">За ≈ 15 минут: что такое CI и CD, как устроен пайплайн, как выкатывать без риска и как понять, стало ли лучше.</p>
+      <div class="agenda">
+        <span><b>1</b>Зачем</span><span><b>2</b>Конвейер</span><span><b>3</b>CI vs CD</span>
+        <span><b>4</b>Симулятор</span><span><b>5</b>Стратегии</span><span><b>6</b>Метрики</span>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>1</b><span>артефакт на все окружения</span></div>
+      <div class="stat"><b>3</b><span>стратегии выката без простоя</span></div>
+      <div class="stat"><b>4</b><span>метрики DORA</span></div>
+    </div>
+  </div>
+  <div class="hint"><kbd>→</kbd> далее · <kbd>F</kbd> полный экран · <kbd>P</kbd> режим докладчика · <kbd>M</kbd> меню</div>
+  <aside class="notes">
+    <p>Начните с вопроса в зал: «Кто из вас боится пятничных деплоев?» Поднимите руки и не комментируйте. Скажите, что за 15 минут разберём, как сделать релиз рутиной.</p>
+    <p>Обещание: к концу вы будете понимать разницу CI, Delivery и Deployment, видеть пайплайн в действии и знать четыре метрики, по которым проверяют прогресс.</p>
+  </aside>
+</section>
+
+<!-- ======================= 02 БЫЛО / СТАЛО ======================= -->
+<section data-title="Зачем: было и стало" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Зачем</div>
+    <h2>Без конвейера релиз — событие, с ним — рутина</h2>
+    <p class="lede">CI/CD превращает доставку из ритуала в повторяемую процедуру.</p>
+  </div>
+  <div class="body col" style="justify-content:center">
+    <div class="pain big">
+      <div class="was"><h3>😖 Без CI/CD</h3><ul><li>Интеграция редко: «merge hell»</li><li>Тесты вручную и от случая к случаю</li><li>Деплой ночью или на выходных, в стрессе</li><li>Откат занимает часы</li></ul></div>
+      <div class="arrow">→</div>
+      <div class="now"><h3>😌 С CI/CD</h3><ul><li>Каждый коммит проверяется автоматически</li><li>Обратная связь за минуты, а не дни</li><li>Деплой становится скучной рутиной</li><li>Откат быстрый и предсказуемый</li></ul></div>
+    </div>
+    <div class="analogy big" style="margin-top:26px"><span class="ai">💡</span><div><span class="al">Аналогия</span>Конвейер на заводе: деталь проверяют на каждом участке, а не в конце. Брак ловят там, где он дешевле всего.</div></div>
+  </div>
+  <aside class="notes">
+    <p>Пройдитесь по левой колонке как по знакомой боли: большинство в зале её узнаёт. Правая колонка — не магия, а результат автоматизации одних и тех же проверок.</p>
+    <p>Аналогию с заводом можно не растягивать: главная мысль — проверка на входе дешевле проверки у покупателя.</p>
+  </aside>
+</section>
+
+<!-- ======================= 03 КОНВЕЙЕР ПО ШАГАМ (код + фокус) ======================= -->
+<section data-title="Конвейер в YAML" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Конвейер</div>
+    <h2>Пайплайн — это YAML, который запускается на каждый push</h2>
+    <p class="lede">Кликните по блоку кода или листайте <kbd>→</kbd>: подсвечивается job и его роль справа.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <script type="text/x-code" data-lang="yaml" data-title=".github/workflows/ci.yml" data-cls="sm">
+        #@test
+        test:
+          steps:
+            - run: npm ci
+            - run: npm run lint
+            - run: npm test -- --coverage
+
+        #@package
+        package:
+          needs: test
+          if: github.ref == 'refs/heads/main'
+          steps:
+            - uses: docker/build-push-action@v6
+              with:
+                push: true
+                tags: ${{ env.IMAGE }}:${{ github.sha }}
+
+        #@deploy
+        deploy-production:
+          needs: deploy-staging
+          environment:
+            name: production
+      </script>
+    </div>
+    <div class="r viz roomy">
+      <div class="ent dom-gr" data-k="test"><div class="ei">🧪</div><div><div class="et">Test</div><div class="ed">Быстрые проверки идут первыми: ошибка видна через минуты, а не после деплоя.</div></div></div>
+      <div class="ent dom-gr" data-k="package"><div class="ei">📦</div><div><div class="et">Package</div><div class="ed">Образ собирается один раз и тегируется SHA коммита. Дальше едет только он.</div></div></div>
+      <div class="ent dom-gr" data-k="deploy"><div class="ei">🚀</div><div><div class="et">Deploy</div><div class="ed">Прод защищён окружением production: без одобрения job не стартует.</div></div></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Пройдите три блока стрелкой. Главное: образ собирается в одном месте, а деплой работает с готовым тегом.</p>
+    <p>Не разбирайте YAML построчно: покажите, что строка environment — это ворота, которые настраивает платформа, а не код скрипта.</p>
+  </aside>
+</section>
+
+<!-- ======================= 04 ИНТЕРАКТИВ: CI vs CD vs Deployment (табы) ======================= -->
+<section data-title="CI, Delivery и Deployment" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Термины</div>
+    <h2>CI — фундамент. Delivery и Deployment различаются одним: воротами</h2>
+    <p class="lede">Переключайте вкладки и смотрите, кто в итоге нажимает кнопку выката.</p>
+  </div>
+  <div class="body col" style="justify-content:center; gap:22px">
+    <div class="tabs" data-group="cd" role="tablist" aria-label="CI, Delivery и Deployment">
+      <button role="tab" data-tab="ci" data-default>Continuous Integration</button>
+      <button role="tab" data-tab="del">Continuous Delivery</button>
+      <button role="tab" data-tab="dep">Continuous Deployment</button>
+    </div>
+    <div class="card pane-big" data-pane="ci" data-group="cd" role="tabpanel">
+      <h3>CI: от коммита до проверенного артефакта</h3>
+      <div class="flowline lg" style="margin:16px 0 18px"><span class="q">commit</span><span class="ar">→</span><span class="q">build</span><span class="ar">→</span><span class="q">unit-тесты, lint</span><span class="ar">→</span><span class="q y">артефакт в registry</span></div>
+      <p class="ed"><b>Что делает:</b> частое слияние в основную ветку, каждый push проверяется автоматически. <b>Чего не делает:</b> не доставляет код в прод. <b>Почему фундамент:</b> без CI не работают ни Delivery, ни Deployment.</p>
+    </div>
+    <div class="card pane-big" data-pane="del" data-group="cd" role="tabpanel" hidden>
+      <h3>Continuous Delivery: релиз готов в любой момент</h3>
+      <div class="flowline lg" style="margin:16px 0 18px"><span class="q">CI</span><span class="ar">→</span><span class="q">релиз-кандидат: staging + E2E</span><span class="ar">→</span><span class="q y">🙋 человек нажимает Deploy</span><span class="ar">→</span><span class="q">prod</span></div>
+      <p class="ed"><b>Кто решает:</b> человек — релиз-менеджер, тимлид или дежурный. <b>Ворота:</b> ручной approval в окружении production. <b>Где уместно:</b> регулируемые домены, релизы по расписанию, пока тесты незрелые.</p>
+    </div>
+    <div class="card pane-big" data-pane="dep" data-group="cd" role="tabpanel" hidden>
+      <h3>Continuous Deployment: зелёный пайплайн катит сам</h3>
+      <div class="flowline lg" style="margin:16px 0 18px"><span class="q">CI</span><span class="ar">→</span><span class="q">релиз-кандидат: staging + E2E</span><span class="ar">→</span><span class="q y">🤖 автодеплой</span><span class="ar">→</span><span class="q">prod</span></div>
+      <p class="ed"><b>Кто решает:</b> никто, решает зелёный пайплайн. <b>Ворот нет:</b> последний тест и есть ворота. <b>Нужно заранее:</b> доверенные тесты, feature flags, наблюдаемость, автооткат.</p>
+    </div>
+    <div class="callout">Это не три стадии подряд, а два режима одного пайплайна. Уберите ручной approval перед prod — и Delivery станет Deployment.</div>
+  </div>
+  <aside class="notes">
+    <p>Дайте зрителям 20 секунд: пусть сами переключат вкладки. Спросите: «Если убрать одну кнопку, что изменится?» Ответ — только ворота.</p>
+    <p>Подчеркните: CI — общий фундамент. Не ставьте CI и CD в один ряд стадий: это разные вопросы, а не последовательность.</p>
+  </aside>
+</section>
+
+<!-- ======================= 05 СИМУЛЯТОР КОНВЕЙЕРА (slides.js) ======================= -->
+<section data-title="Симулятор: сломайте этап" class="dom-us sim">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Попробуйте сами</div>
+    <h2>Сломайте этап — и посмотрите, что уедет в прод</h2>
+    <p class="lede">Нажмите «💥 сломать» у одного или нескольких этапов, затем «▶ Запустить». Сломанный этап остановит конвейер.</p>
+  </div>
+  <div class="body col">
+    <div class="steps-row" id="stages">
+      <div class="sr" data-stg="build"><span class="si">🔨</span><b>Build</b><span class="st">ждёт</span><button class="brk" data-brk="build" aria-pressed="false">💥 сломать</button></div>
+      <div class="sr" data-stg="test"><span class="si">🧪</span><b>Test</b><span class="st">ждёт</span><button class="brk" data-brk="test" aria-pressed="false">💥 сломать</button></div>
+      <div class="sr" data-stg="scan"><span class="si">🛡️</span><b>Scan</b><span class="st">ждёт</span><button class="brk" data-brk="scan" aria-pressed="false">💥 сломать</button></div>
+      <div class="sr" data-stg="stage"><span class="si">🚧</span><b>Deploy staging</b><span class="st">ждёт</span><button class="brk" data-brk="stage" aria-pressed="false">💥 сломать</button></div>
+      <div class="sr" data-stg="prod"><span class="si">🚀</span><b>Deploy prod</b><span class="st">за воротами</span></div>
+    </div>
+    <div class="grid" style="grid-template-columns: 1.25fr .75fr; gap: 18px; flex: 1; min-height: 0;">
+      <div class="term" style="min-height: 0;"><div class="tt"><i></i><i></i><i></i>&nbsp;pipeline</div><pre id="pipeLog" aria-live="polite"><span class="dim">Нажмите «▶ Запустить».</span></pre></div>
+      <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+        <div class="muted">Версия на production</div>
+        <div class="big-num"><span class="n" id="prodVer">v1.4.2</span></div>
+        <p id="prodTxt" aria-live="polite" style="margin:0; font-size:19px;">Прод работает на v1.4.2.</p>
+        <div class="seg" role="group" aria-label="Режим выката">
+          <button data-mode="del" aria-pressed="true">Delivery: ворота</button>
+          <button data-mode="dep" aria-pressed="false">Deployment: без ворот</button>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:auto;">
+          <button class="btn acc" id="pipeRun">▶ Запустить</button>
+          <button class="btn ghost" id="pipeGate" disabled>✋ Approve</button>
+          <button class="btn ghost" id="pipeReset">⟲ Сбросить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Сначала запустите без поломок: прод получит v1.5.0 только после Approve. Потом сломайте Test или Scan и покажите, что прод остался на v1.4.2.</p>
+    <p>Переключите режим на Deployment: ворот нет, и прод обновляется сам. Вывод: ворота — настройка окружения, а не отдельный код.</p>
+  </aside>
+</section>
+
+<!-- ======================= 06 PUSH vs PULL ======================= -->
+<section data-title="Push или pull: кто меняет прод" class="dom-pg">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Архитектура</div>
+    <h2>Кто меняет production: CI-раннер или агент в кластере</h2>
+    <p class="lede">Оба варианта доставляют собранный артефакт. Разница — где лежат права на запись.</p>
+  </div>
+  <div class="body col" style="justify-content:center; gap:26px">
+    <div class="versus">
+      <div class="vcard bad">
+        <div class="vh"><span class="big">⬆️</span><div><h3>Push</h3><small>CI-job сам ходит в кластер</small></div></div>
+        <ul class="ticks"><li><span><code class="i">kubectl set image</code> из job'а: креды с правом менять прод лежат на раннере</span></li><li><span>Состояние кластера может разъехаться с репозиторием, и никто не узнает</span></li><li><span>Откат — снова прогнать job со старым тегом</span></li></ul>
+      </div>
+      <div class="vs">VS</div>
+      <div class="vcard good">
+        <div class="vh"><span class="big">⬇️</span><div><h3>Pull (GitOps)</h3><small>агент в кластере тянет манифесты из Git</small></div></div>
+        <ul class="ticks good"><li><span>Git — источник истины; агент сверяет кластер и чинит drift</span></li><li><span>CI только коммитит новый тег в репозиторий манифестов</span></li><li><span>Откат — <code class="i">git revert</code>; наружу не выдаются права на запись</span></li></ul>
+      </div>
+    </div>
+    <div class="callout" style="font-size:20px">Argo CD и Flux не собирают код и не гоняют тесты: они доводят уже собранный артефакт до кластера. Плата — ещё один компонент и два репозитория: код и манифесты.</div>
+  </div>
+  <aside class="notes">
+    <p>Произнесите одну фразу: «В push-модели ключ от прода лежит у раннера; в pull-модели ключа снаружи нет». Не превращайте слайд в сравнение брендов.</p>
+    <p>Если в зале мало опыта с Kubernetes, скажите, что GitOps — это следующий шаг после понимания пайплайна, а не его замена.</p>
+  </aside>
+</section>
+
+<!-- ======================= 07 ИНТЕРАКТИВ: СТРАТЕГИИ ДЕПЛОЯ (переключатель) ======================= -->
+<section data-title="Стратегии деплоя" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Стратегии</div>
+    <h2>Новая версия приходит без простоя: три способа</h2>
+    <p class="lede">Выберите стратегию и нажмите «▶ Выкатить v2»: смотрите, как растёт доля трафика на новую версию.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <div class="seg" role="group" aria-label="Стратегия деплоя">
+        <button data-st="roll" aria-pressed="true">Rolling</button>
+        <button data-st="bg" aria-pressed="false">Blue-Green</button>
+        <button data-st="canary" aria-pressed="false">Canary</button>
+      </div>
+      <div class="card" style="display:flex; flex-direction:column; gap:22px; flex:1; justify-content:center;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; font-weight:700; font-size:20px;"><span>v1 — текущая</span><span id="stPct" style="font:700 22px var(--mono);">v2: 0%</span></div>
+        <div class="meter" style="height:34px;"><i id="stBarI"></i></div>
+        <div class="cells tall" id="stCells" aria-hidden="true"></div>
+        <div class="muted small" style="display:flex; gap:14px;"><span><span class="sw-v2" aria-hidden="true">■</span> v2 (новая)</span><span><span class="sw-v1" aria-hidden="true">■</span> v1 (текущая)</span></div>
+        <p id="stTxt" class="callout" aria-live="polite" style="margin:0;">Все инстансы на v1.</p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn acc" id="stGo">▶ Выкатить v2</button>
+        <button class="btn ghost" id="stBack">⟲ Откат</button>
+      </div>
+    </div>
+    <div class="r">
+      <div class="card st-info">
+        <h3 id="stName">Rolling update</h3>
+        <div class="row"><span class="ei">⚙️</span><p><b>Как работает</b><span id="stDesc"></span></p></div>
+        <div class="row"><span class="ei">💸</span><p><b>Цена</b><span id="stPrice"></span></p></div>
+        <div class="row"><span class="ei">⏪</span><p><b>Откат</b><span id="stBackTxt"></span></p></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Нажмите «Выкатить» на Rolling: объясните, что две версии работают одновременно, поэтому API и схема БД должны выдерживать обе.</p>
+    <p>Затем переключите на Blue-Green и Canary. Главный вопрос зала: «Что вы смотрите перед тем, как поднять долю canary?» — метрики ошибок и задержки.</p>
+  </aside>
+</section>
+
+<!-- ======================= 08 ОТКАТ ======================= -->
+<section data-title="Откат — это деплой" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Откат</div>
+    <h2>Откат — это обычный деплой, только с известной хорошей версией</h2>
+    <p class="lede">Опирайтесь не на git HEAD~1, а на образ, который реально крутится в проде.</p>
+  </div>
+  <div class="body split">
+    <div class="l" style="justify-content:center">
+      <script type="text/x-code" data-lang="bash" data-title="rollback.sh" data-cls="sm">
+        #@save
+        # до выката: что реально крутится в проде
+        LAST_GOOD_IMAGE=$(kubectl get deployment/myapp \
+          -n production \
+          -o jsonpath='{.spec.template.spec.containers[0].image}')
+
+        # ... выкатили, поймали деградацию ...
+
+        #@undo
+        kubectl set image deployment/myapp \
+          myapp="$LAST_GOOD_IMAGE" -n production
+        #@check
+        kubectl rollout status deployment/myapp \
+          -n production --timeout=300s
+      </script>
+    </div>
+    <div class="r viz roomy">
+      <div class="ent dom-fw" data-k="save"><div class="ei">📌</div><div><div class="et">Запомнить образ из кластера</div><div class="ed">Что реально крутится в проде до выката, а не «предыдущий коммит».</div></div></div>
+      <div class="ent dom-fw" data-k="undo"><div class="ei">⏪</div><div><div class="et">Выкатить его снова</div><div class="ed">Тот же механизм деплоя, только с проверенным тегом.</div></div></div>
+      <div class="ent dom-fw" data-k="check"><div class="ei">✅</div><div><div class="et">Дождаться rollout status</div><div class="ed">Без этой строки job зеленеет раньше, чем поды поднялись.</div></div></div>
+      <div class="callout" style="margin-top:6px;"><b>Миграции БД rollback не откатывает.</b> Сначала расширяем схему, потом код, и только через релиз-другой сужаем.</div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Пройдите три шага стрелкой. Вопрос в зал: почему образ запоминаем из кластера, а не из git? Ответ: в git может лежать коммит, который вообще не доехал до прода.</p>
+    <p>Заключительный акцент: откат кода не отменяет миграцию. Поэтому миграции обратно совместимы.</p>
+  </aside>
+</section>
+
+<!-- ======================= 09 ИНТЕРАКТИВ: DORA (ползунки) ======================= -->
+<section data-title="Метрики DORA: двигаем ползунки" class="dom-ng">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Метрики</div>
+    <h2>DORA: скорость и стабильность двигаем вместе</h2>
+    <p class="lede">Стартовые значения — условная команда «до». Двигайте ползунки: вердикт внизу оценивает скорость и стабильность вместе.</p>
+  </div>
+  <div class="body col">
+    <div class="grid g2" style="flex:1; grid-template-rows: 1fr 1fr;">
+      <div class="card dora-in"><div class="row"><b>Deployment Frequency</b><output id="oFreq"></output></div><input type="range" id="dFreq" min="1" max="50" step="1" aria-label="Deployment Frequency: деплоев в неделю"><small>Как часто выкатываете в прод</small></div>
+      <div class="card dora-in"><div class="row"><b>Lead Time for Changes</b><output id="oLead"></output></div><input type="range" id="dLead" min="1" max="336" step="1" aria-label="Lead Time: часов от коммита до прода"><small>Время от коммита до продакшена</small></div>
+      <div class="card dora-in"><div class="row"><b>Change Failure Rate</b><output id="oCfr"></output></div><input type="range" id="dCfr" min="0" max="50" step="1" aria-label="Change Failure Rate: процент деплоев с инцидентом"><small>Доля деплоев, которые вызвали инцидент</small></div>
+      <div class="card dora-in"><div class="row"><b>Failed Deployment Recovery Time</b><output id="oRest"></output></div><input type="range" id="dRest" min="1" max="72" step="1" aria-label="Recovery Time: часов до восстановления"><small>Как быстро восстанавливаетесь после неудачного выката</small></div>
+    </div>
+    <div class="callout" id="dVerdict" aria-live="polite" style="font-size:23px; padding:20px 24px;"></div>
+  </div>
+  <aside class="notes">
+    <p>Попросите одного добровольца сдвинуть частоту вверх, а CFR оставить. Потом сдвинуть CFR вверх. Вывод: скорость, купленная ценой сбоев, — не улучшение.</p>
+    <p>Не называйте «элитные» цифры: DORA сама отошла от жёсткой лестницы. Смотрите тренд своих четырёх метрик.</p>
+  </aside>
+</section>
+
+<!-- ======================= 10 ТАБЛО: здоровье пайплайна ======================= -->
+<section data-title="Здоровье пайплайна" class="dom-ng">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Метрики</div>
+    <h2>Сам пайплайн тоже измеряют: четыре цифры здоровья</h2>
+    <p class="lede">DORA говорит о результате доставки. Эти показатели говорят, удобно ли командой пользоваться конвейером.</p>
+  </div>
+  <div class="body col" style="justify-content:center; gap:22px">
+    <div class="kpis">
+      <div class="kpi"><b>&lt; 15 мин</b><span>p95 длительности пайплайна на PR: скорость обратной связи</span></div>
+      <div class="kpi"><b>&gt; 95%</b><span>success rate на main: красный main блокирует всех</span></div>
+      <div class="kpi"><b>&lt; 1%</b><span>flaky-test rate: прямой убийца доверия к CI</span></div>
+      <div class="kpi"><b>&lt; 30 с</b><span>queue time: ожидание свободного раннера</span></div>
+    </div>
+    <div class="grid g2 cards-big">
+      <div class="card"><h3>Cache hit rate &gt; 80%</h3><p class="ed">Работает ли кэш зависимостей и слоёв, или каждый запуск качает всё заново.</p></div>
+      <div class="card"><h3>Ручные Retry — близко к нулю</h3><p class="ed">Если пайплайн регулярно «чинят» кнопкой Retry, он не автоматизирован.</p></div>
+    </div>
+    <div class="callout" style="font-size:20px">Смотрите на тренд, а не на цифру за сегодня. Пороги — ориентиры для обсуждения в команде, а не закон.</div>
+  </div>
+  <aside class="notes">
+    <p>Пройдитесь по четырём плиткам и спросите, какую из них команда измеряет прямо сейчас. Обычно никто не знает ответа по flaky-тестам.</p>
+    <p>Подчеркните: цифры на плитках — ориентиры из мануала, сверяйте их с собственным трендом.</p>
+  </aside>
+</section>
+
+<!-- ======================= 11 АНТИПАТТЕРНЫ: что ломается → как правильно ======================= -->
+<section data-title="Антипаттерны: что ломается" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Ошибки</div>
+    <h2>Шесть ошибок, которые ломают конвейер</h2>
+    <p class="lede">Красным — что ломается, зелёным — как правильно.</p>
+  </div>
+  <div class="body col">
+    <div class="grid g2 fill">
+      <div class="card fix"><b>Монолитный пайплайн: один job на всё</b><div class="x">✗ Медленная обратная связь: линтер падает через двадцать минут</div><div class="y">✓ Параллельные jobs: lint, тесты и сборка не ждут друг друга</div></div>
+      <div class="card fix"><b>Flaky-тесты, которые «иногда падают»</b><div class="x">✗ Команда перестаёт верить красному CI и жмёт Retry</div><div class="y">✓ Чинить или удалять нестабильные тесты, считать flaky-rate</div></div>
+      <div class="card fix"><b>Ручные шаги внутри «автоматического» пайплайна</b><div class="x">✗ Теряется смысл автоматизации, а откат зависит от памяти человека</div><div class="y">✓ Автоматизировать всё, включая rollback</div></div>
+      <div class="card fix"><b>Разные артефакты для staging и prod</b><div class="x">✗ «У меня работает, в проде нет»: прод собран иначе</div><div class="y">✓ Один immutable-образ по SHA на все окружения</div></div>
+      <div class="card fix"><b>Нет мониторинга после релиза</b><div class="x">✗ Ошибки находят пользователи, а не система</div><div class="y">✓ Алерты и дашборды сразу после деплоя</div></div>
+      <div class="card fix"><b>Секреты в переменных без шифрования</b><div class="x">✗ Ключи утекают из логов, истории и форков</div><div class="y">✓ Vault или Secrets Manager; в облако — OIDC вместо вечных ключей</div></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Не читайте таблицу целиком: выберите две строки, которые узнаёт зал, и попросите назвать свою версию каждой ошибки.</p>
+    <p>Самая частая в реальных командах — flaky-тесты: она незаметно съедает доверие к CI.</p>
+  </aside>
+</section>
+
+<!-- ======================= 12 БЕЗОПАСНОСТЬ РАННЕРА ======================= -->
+<section data-title="Безопасность раннера" class="dom-us">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Безопасность</div>
+    <h2>Раннер видит код, секреты и прод — поэтому его защищают</h2>
+    <p class="lede">Четыре правила гигиены, которые закрывают самые частые дыры.</p>
+  </div>
+  <div class="body col" style="justify-content:center">
+    <div class="grid g2 cards-big" style="grid-auto-rows:1fr">
+      <div class="card"><h3>🔒 Минимальные права токена</h3><p class="ed" style="font-size:18px;"><code class="i">permissions: contents: read</code> по умолчанию. Право записи добавляем точечно в тех job'ах, где оно нужно.</p></div>
+      <div class="card"><h3>🪪 OIDC вместо вечных ключей</h3><p class="ed" style="font-size:18px;">Раннер получает короткоживущий токен облака под конкретный workflow, а не хранит <code class="i">AWS_SECRET_ACCESS_KEY</code>, который никто не ротирует.</p></div>
+      <div class="card"><h3>📌 Actions — по полному SHA</h3><p class="ed" style="font-size:18px;">Тег <code class="i">@v4</code> подвижен: его могут переписать. <code class="i">uses: owner/action@&lt;sha&gt;</code> фиксирует проверенный код.</p></div>
+      <div class="card"><h3>🚫 Осторожно с pull_request_target</h3><p class="ed" style="font-size:18px;">Он выполняется в контексте базового репозитория с секретами, поэтому код из чужого форка на нём не запускают.</p></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Спросите: «Кто в команде знает, какие права у токена в ваших workflow?» Чаще всего никто — и это и есть точка для улучшения.</p>
+    <p>Если времени мало, назовите одну строку: contents read по умолчанию и OIDC. Остальное — в мануале.</p>
+  </aside>
+</section>
+
+<!-- ======================= 13 ТЕСТ .mc ======================= -->
+<section data-title="Проверьте себя" class="dom-id">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Проверка</div>
+    <h2>Scan нашёл уязвимость. Что уйдёт в прод?</h2>
+    <p class="lede">Выберите ответ — разбор откроется сразу.</p>
+  </div>
+  <div class="body col" style="justify-content:center">
+    <div class="mc big" data-correct="1">
+      <div class="q">Сборка и unit-тесты прошли. Этап Scan падает на уязвимости HIGH. Что произойдёт дальше?</div>
+      <div class="opts">
+        <button>Пайплайн продолжит работу, а предупреждение останется в логе, прод обновится</button>
+        <button>Конвейер остановится: деплой не стартует, пока уязвимость не разобрана</button>
+        <button>Прод обновится, но только для 5% трафика, остальное отложат</button>
+      </div>
+      <div class="why"><b>Почему так.</b> Этапы идут по порядку, и провал одного останавливает следующие. Команда <code class="i">trivy --exit-code 1</code> роняет job. Образ уже лежит в реестре, но до прода не доезжает: сканируется ровно тот артефакт, что поедет дальше.</div>
+      <span class="score"></span>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Дайте 20 секунд подумать, потом откройте разбор. Большинство выберет первый вариант: «предупреждение же не ошибка». Разберите, почему это не так.</p>
+  </aside>
+</section>
+
+<!-- ======================= 14 ФЛИП-ВОПРОСЫ ======================= -->
+<section data-title="Вопросы для самопроверки" class="dom-id">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Самопроверка</div>
+    <h2>Ответьте сами, потом откройте карточку</h2>
+    <p class="lede">Нажмите на карточку, чтобы увидеть ответ.</p>
+  </div>
+  <div class="qa fill">
+    <button class="flip" aria-expanded="false"><span class="q">Чем Continuous Delivery отличается от Continuous Deployment?</span><span class="a">Только ручными воротами перед production. В Delivery деплой нажимает человек, в Deployment ворот нет.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Зачем собирать образ один раз?</span><span class="a">Immutable-артефакт: один и тот же образ по SHA едет через все окружения. Пересборка для прода — путь к «работает у меня».</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Что делает Blue-Green, если после переключения сломалось?</span><span class="a">Возвращает балансировщик на Blue. Откат мгновенный, потому что старое окружение никуда не делось.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Почему миграции БД нельзя откатить командой rollback?</span><span class="a">Rollback меняет код, а не данные. Миграции делают обратно совместимыми: сначала расширить схему, потом код, потом сузить.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Почему нельзя брать тег @v4 у стороннего Action в prod-пайплайне?</span><span class="a">Тег подвижен, его могут переписать. Фиксируйте полный SHA, чтобы запускать именно проверенный код.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Какие метрики DORA смотрят в паре со скоростью деплоев?</span><span class="a">Метрики стабильности: Change Failure Rate и Failed Deployment Recovery Time. Ускорение, купленное ростом сбоев, — не улучшение.</span><span class="tap">показать ответ →</span></button>
+  </div>
+  <aside class="notes">
+    <p>Дайте зрителям выбрать карточку самим. Если ответ неочевиден, переведите вопрос в дискуссию на 30 секунд.</p>
+  </aside>
+</section>
+
+<!-- ======================= 15 ИТОГИ + CTA ======================= -->
+<section data-title="Итоги и что дальше" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Итоги</div>
+    <h2>Что вы теперь умеете</h2>
+  </div>
+  <div class="body col" style="justify-content:center">
+    <div class="grid g3 cards-big">
+      <div class="card"><h3>🔁 CI</h3><p class="ed" style="font-size:18px;">Каждый коммит проверяется. Один неизменяемый артефакт по SHA — основа всего.</p></div>
+      <div class="card"><h3>🚦 CD</h3><p class="ed" style="font-size:18px;">Delivery или Deployment — это решение о воротах перед production, а не о наличии конвейера.</p></div>
+      <div class="card"><h3>📈 Измерение</h3><p class="ed" style="font-size:18px;">Четыре метрики DORA смотрите парами и трендом. Начните с автодеплоя в staging.</p></div>
+    </div>
+  </div>
+  <div class="nextup">
+    <div><b>Дальше: Docker</b><br><span>Как собирается тот неизменяемый образ, который катит пайплайн. А пока — мануал с конфигами и квиз.</span></div>
+    <a class="btn acc" href="../../materials/manuals/02-cicd-manual/">📖 Мануал</a>
+    <a class="btn ghost" href="../../materials/manuals/02-cicd-quiz/">✅ Квиз</a>
+    <a class="btn ghost" href="../../#toc">☰ Оглавление курса</a>
+  </div>
+  <aside class="notes">
+    <p>Итог в одну фразу: CI даёт доверие к каждому коммиту, CD — право выкатить в любой момент, а стратегии выката — выкатить без простоя.</p>
+    <p>Анонс: следующая тема — Docker, там разберём, как собирается образ, который пайплайн катит по окружениям.</p>
+  </aside>
+</section>
+
+</main>
+</div>
+
+<div class="progress" aria-hidden="true"><i></i></div>
+<nav class="controls" aria-label="Навигация по слайдам">
+  <a class="nav" href="../../#toc" title="Оглавление курса" aria-label="Оглавление курса">🏠</a>
+  <a class="nav opt" href="../../materials/manuals/02-cicd-manual/" title="Полный мануал" aria-label="Полный мануал">📖</a>
+  <span class="sep opt"></span>
+  <button id="prevB" title="Назад (←)" aria-label="Назад">←</button>
+  <span class="cnt" id="cnt" aria-live="polite"></span>
+  <button id="nextB" title="Далее (→)" aria-label="Далее">→</button>
+  <span class="sep opt"></span>
+  <button id="menuB" title="Все слайды (M)" aria-label="Список слайдов">☰</button>
+  <button id="notesB" class="opt" title="Заметки лектора (N)" aria-label="Заметки лектора">🗒</button>
+  <button id="presB" class="opt" title="Режим докладчика (P)" aria-label="Режим докладчика">🎤</button>
+  <button id="fsB" class="opt" title="Полный экран (F)" aria-label="Полный экран">⛶</button>
+</nav>
+<div class="menu" id="menu" role="dialog" aria-label="Список слайдов"></div>
+<div class="notes-panel" id="notesP" aria-live="polite"></div>
+
+<script src="../../assets/deck.js"></script>
+<script src="../../assets/cursus.js"></script>
+<script src="slides.js"></script>
+</body>
+</html>

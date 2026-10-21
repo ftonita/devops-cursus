@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="only light">
+<!-- ЗАМЕНИТЬ: NN, SLUG, тему (theme-*), title, description -->
+<meta name="description" content="Одно предложение: что студент поймёт и сможет после презентации.">
+<title>Тема — DevOps Cursus</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='10' width='52' height='44' rx='10' fill='%230f172a'/%3E%3Cpath d='m18 26 8 6-8 6M30 40h14' stroke='%23fff' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap&subset=cyrillic" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/deck.css">
+<link rel="stylesheet" href="../../assets/cursus.css">
+</head>
+<body class="theme-git">
+<noscript><div class="noscript">Для презентации нужен JavaScript. Текстовая версия — <a href="../../materials/manuals/NN-SLUG-manual/">мануал</a>.</div></noscript>
+<div class="stage">
+<main class="deck" id="deck">
+
+<!-- ======================= 01 TITLE (продающий титул) ======================= -->
+<section data-title="Название темы" class="dom-id">
+  <div class="sh"><div class="kicker"><span class="n"></span>Тема NN · Название</div></div>
+  <div class="hero">
+    <div>
+      <h1>Громкое обещание<br>результата</h1>
+      <p class="hook">Боль в одну фразу: <em>«что бывает, если этого не знать»</em>.</p>
+      <p class="lede">Что узнаете за ≈ 15 минут и что сможете делать после.</p>
+      <div class="agenda">
+        <span><b>1</b>Зачем</span><span><b>2</b>Как устроено</span><span><b>3</b>Руками</span>
+        <span><b>4</b>Ошибки</span><span><b>5</b>Проверка</span><span><b>6</b>Дальше</span>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>3</b><span>зоны, а не две</span></div>
+      <div class="stat"><b>0</b><span>магии</span></div>
+    </div>
+  </div>
+  <div class="hint"><kbd>→</kbd> далее · <kbd>F</kbd> полный экран · <kbd>P</kbd> режим докладчика · <kbd>M</kbd> меню</div>
+  <aside class="notes">
+    <p>Что сказать на титуле: 2–3 предложения. Как включить аудиторию.</p>
+  </aside>
+</section>
+
+<!-- ======================= 02 БЫЛО / СТАЛО ======================= -->
+<section data-title="Зачем это нужно" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Зачем</div>
+    <h2>Заголовок-утверждение, а не тема</h2>
+    <p class="lede">Одна мысль слайда в одном предложении.</p>
+  </div>
+  <div class="body col">
+    <div class="pain">
+      <div class="was"><h3>😖 Без этого</h3><ul><li>Конкретная боль 1</li><li>Конкретная боль 2</li><li>Конкретная боль 3</li></ul></div>
+      <div class="arrow">→</div>
+      <div class="now"><h3>😌 С этим</h3><ul><li>Результат 1</li><li>Результат 2</li><li>Результат 3</li></ul></div>
+    </div>
+    <div class="analogy" style="margin-top:22px"><span class="ai">💡</span><div><span class="al">Аналогия</span>Бытовая аналогия, которая объясняет идею без терминов.</div></div>
+  </div>
+  <aside class="notes"><p>Заметки лектора.</p></aside>
+</section>
+
+<!-- ======================= 03 КОД + ПОШАГОВЫЙ ФОКУС ======================= -->
+<section data-title="Команды по шагам" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Практика</div>
+    <h2>Разберём по шагам</h2>
+    <p class="lede">Кликайте по блокам кода или листайте <kbd>→</kbd> — подсвечивается нужный фрагмент и пояснение справа.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <script type="text/x-code" data-lang="git" data-title="terminal" data-cls="grow">
+        #@add
+        git add src/app.py
+        #@commit
+        git commit -m "Fix: retry on timeout"
+        #@push
+        git push origin main
+      </script>
+    </div>
+    <div class="r viz">
+      <div class="ent dom-gr" data-k="add"><div class="ei">1</div><div><div class="et">Индекс</div><div class="ed">Что попадёт в коммит.</div></div></div>
+      <div class="ent dom-gr" data-k="commit"><div class="ei">2</div><div><div class="et">Коммит</div><div class="ed">Снимок проекта.</div></div></div>
+      <div class="ent dom-gr" data-k="push"><div class="ei">3</div><div><div class="et">Push</div><div class="ed">Отправка в remote.</div></div></div>
+    </div>
+  </div>
+  <aside class="notes"><p>Пройти стрелкой три шага.</p></aside>
+</section>
+
+<!-- ======================= 04 ИНТЕРАКТИВ: ТАБЫ / ШАГИ ======================= -->
+<section data-title="Интерактив: выберите этап" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Как устроено</div>
+    <h2>Нажмите на этап — увидите, что внутри</h2>
+  </div>
+  <div class="body col">
+    <div class="steps-row" data-group="stages">
+      <button class="sr" data-tab="a" data-default><span class="si">📝</span><b>Этап A</b><span>коротко</span></button>
+      <button class="sr" data-tab="b"><span class="si">🧪</span><b>Этап B</b><span>коротко</span></button>
+      <button class="sr" data-tab="c"><span class="si">🚀</span><b>Этап C</b><span>коротко</span></button>
+    </div>
+    <div class="card" data-pane="a" data-group="stages"><h3>Этап A</h3><p>Что происходит, зачем, что бывает, если пропустить.</p></div>
+    <div class="card" data-pane="b" data-group="stages"><h3>Этап B</h3><p>…</p></div>
+    <div class="card" data-pane="c" data-group="stages"><h3>Этап C</h3><p>…</p></div>
+  </div>
+  <aside class="notes"><p>Дать студентам самим пощёлкать 30 секунд.</p></aside>
+</section>
+
+<!-- ======================= 05 КАСТОМНЫЙ СИМУЛЯТОР (slides.js) ======================= -->
+<section data-title="Симулятор" class="dom-us">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Попробуйте сами</div>
+    <h2>Нажмите «Запустить» и посмотрите, что будет</h2>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <div class="term"><div class="tt"><i></i><i></i><i></i>&nbsp;терминал</div><pre id="simOut" aria-live="polite"><span class="dim">Нажмите «Запустить».</span></pre></div>
+    </div>
+    <div class="r">
+      <div class="card"><h3>Что делает симулятор</h3><p class="muted">Пояснение, на что смотреть.</p></div>
+      <div style="display:flex;gap:10px"><button class="btn acc" id="simRun">▶ Запустить</button><button class="btn ghost" id="simReset">⟲ Сбросить</button></div>
+    </div>
+  </div>
+  <aside class="notes"><p>Что показать и какой вывод сделать.</p></aside>
+</section>
+
+<!-- ======================= 06 ТЕСТ ======================= -->
+<section data-title="Проверьте себя" class="dom-id">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Проверка</div>
+    <h2>Что выберете вы?</h2>
+  </div>
+  <div class="body col">
+    <div class="mc" data-correct="1">
+      <div class="q">Сценарий из жизни и вопрос по нему?</div>
+      <div class="opts">
+        <button>Неверный, но правдоподобный вариант</button>
+        <button>Верный вариант</button>
+        <button>Ещё один неверный</button>
+      </div>
+      <div class="why"><b>Почему так.</b> Короткий разбор: на каком принципе основан ответ.</div>
+      <span class="score"></span>
+    </div>
+  </div>
+  <aside class="notes"><p>Дать 20 секунд подумать, потом открыть.</p></aside>
+</section>
+
+<!-- ======================= 07 ИТОГИ + CTA ======================= -->
+<section data-title="Итоги и что дальше" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Итоги</div>
+    <h2>Что вы теперь умеете</h2>
+  </div>
+  <div class="qa">
+    <button class="flip" aria-expanded="false"><span class="q">Вопрос 1?</span><span class="a">Короткий ответ.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Вопрос 2?</span><span class="a">Короткий ответ.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Вопрос 3?</span><span class="a">Короткий ответ.</span><span class="tap">показать ответ →</span></button>
+  </div>
+  <div class="nextup" style="margin-top:auto">
+    <div><b>Дальше: углубиться</b><br><span>Полный мануал и квиз к этой теме — архитектура, конфиги, ошибки.</span></div>
+    <a class="btn acc" href="../../materials/manuals/NN-SLUG-manual/">📖 Открыть мануал</a>
+    <a class="btn ghost" href="../../#toc">☰ Оглавление курса</a>
+  </div>
+  <aside class="notes"><p>Подвести итог, анонсировать следующую тему.</p></aside>
+</section>
+
+</main>
+</div>
+
+<div class="progress" aria-hidden="true"><i></i></div>
+<nav class="controls" aria-label="Навигация по слайдам">
+  <a class="nav" href="../../#toc" title="Оглавление курса" aria-label="Оглавление курса">🏠</a>
+  <a class="nav opt" href="../../materials/manuals/NN-SLUG-manual/" title="Полный мануал" aria-label="Полный мануал">📖</a>
+  <span class="sep opt"></span>
+  <button id="prevB" title="Назад (←)" aria-label="Назад">←</button>
+  <span class="cnt" id="cnt" aria-live="polite"></span>
+  <button id="nextB" title="Далее (→)" aria-label="Далее">→</button>
+  <span class="sep opt"></span>
+  <button id="menuB" title="Все слайды (M)" aria-label="Список слайдов">☰</button>
+  <button id="notesB" class="opt" title="Заметки лектора (N)" aria-label="Заметки лектора">🗒</button>
+  <button id="presB" class="opt" title="Режим докладчика (P)" aria-label="Режим докладчика">🎤</button>
+  <button id="fsB" class="opt" title="Полный экран (F)" aria-label="Полный экран">⛶</button>
+</nav>
+<div class="menu" id="menu" role="dialog" aria-label="Список слайдов"></div>
+<div class="notes-panel" id="notesP" aria-live="polite"></div>
+
+<script src="../../assets/deck.js"></script>
+<script src="../../assets/cursus.js"></script>
+<script src="slides.js"></script>
+</body>
+</html>
