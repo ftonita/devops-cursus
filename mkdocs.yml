@@ -1,15 +1,16 @@
-# Сайт курса на GitHub Pages: собирается из manuals/, glossary/ и ROADMAP.MD.
+# Раздел «Материалы» сайта курса (/materials/): мануалы, квизы, глоссарий, роадмап.
+# Корень сайта и презентации — статика из site/ (см. .github/workflows/pages.yml).
 # Исходники в репозитории остаются как есть (.MD), а scripts/prepare-docs.sh
 # перед сборкой копирует их в build/docs с расширением .md — его ждёт MkDocs.
 site_name: DevOps Cursus
 site_description: Учебные материалы по DevOps для менторской программы
-site_url: https://ftonita.github.io/devops-cursus/
+site_url: https://ftonita.github.io/devops-cursus/materials/
 repo_url: https://github.com/ftonita/devops-cursus
 repo_name: ftonita/devops-cursus
 edit_uri: ""
 
 docs_dir: build/docs
-site_dir: build/site
+site_dir: build/site/materials
 
 # --strict в CI превращает эти предупреждения в ошибку сборки:
 # битая ссылка на файл или якорь не доедет до production.
@@ -22,6 +23,10 @@ validation:
 theme:
   name: material
   language: ru
+  custom_dir: overrides
+  font:
+    text: Inter
+    code: JetBrains Mono
   features:
     - navigation.indexes
     - navigation.top
@@ -30,14 +35,21 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-7
         name: Тёмная тема
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-4
         name: Светлая тема
+
+extra_css:
+  - stylesheets/cursus.css
 
 # nav не задаём: MkDocs строит меню сам по структуре build/docs,
 # и новый мануал попадает на сайт без правки этого файла.

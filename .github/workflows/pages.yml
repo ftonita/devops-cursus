@@ -52,8 +52,16 @@ jobs:
       - name: Prepare sources
         run: ./scripts/prepare-docs.sh
 
-      - name: Build (strict)
+      - name: Build materials (strict)
         run: mkdocs build --strict
+
+      # Корень сайта — статика из site/ (хаб, презентации, общие стили).
+      # Мануалы MkDocs уже лежат в build/site/materials/ и не затираются.
+      - name: Assemble site
+        run: |
+          cp -R site/. build/site/
+          test -f build/site/index.html
+          test -f build/site/materials/index.html
 
       # Артефакт собираем один раз и деплоим именно его (immutable artifact).
       # На PR он не нужен — там сборка только проверка.

@@ -8,6 +8,14 @@ content itself is written in Russian for the target audience.
 
 - `manuals/` — numbered manual chapters (`NN-topic-manual.MD`), the actual
   learning content. Written in Russian, one topic per file.
+- `site/` — **статика сайта (GitHub Pages, корень)**: `index.html` — хаб с оглавлением
+  курса (рисуется из `site/topics.js`), `slides/NN-slug/` — интерактивные
+  «продающие» презентации по темам, `assets/` — общий дизайн-код
+  (`deck.css/js` — движок и база, `cursus.css/js` — темы и компоненты).
+  Мануалы (`.MD`) остаются источником материала и публикуются MkDocs в `/materials/`.
+- `templates/deck/` — рабочий шаблон колоды (копировать для новой темы).
+- `scripts/check-decks.py` — проверка колод в headless-браузере (переполнение слайдов,
+  JS-ошибки, мобильная вёрстка, скриншоты). Нужен `pip install playwright`.
 - `templates/manual-template.MD` — canonical section structure every new
   manual must follow (mirrors `manuals/02-cicd-manual.MD`).
 - `glossary/GLOSSARY.MD` — shared glossary of terms introduced across
@@ -20,6 +28,8 @@ content itself is written in Russian for the target audience.
     diagram syntax of a manual.
   - `quiz-builder` (sonnet) — generates a companion self-check/lab file for
     a finished manual.
+  - `deck-builder` (haiku) — верстает презентацию `site/slides/NN-slug/` по
+    скиллу `deck-authoring` и сам прогоняет `check-decks.py`.
   - `devops-researcher` (haiku) — read-only fact-gathering (WebSearch/
     WebFetch). Called by `devops-writer` and `tech-reviewer` to offload
     research; never invoked to produce manual content itself.
@@ -38,6 +48,8 @@ content itself is written in Russian for the target audience.
     devops-writer → tech-reviewer → fix loop → quiz-builder → ROADMAP.MD
     update automatically. Triggers on requests like "напиши мануал про X" /
     "создай урок по Y" — don't call `devops-writer` directly for those.
+  - `deck-authoring` — контракт презентации: типы слайдов, компоненты,
+    нарратив «продающей» колоды, правила проверки.
   - `manual-template` — the section structure and style rules.
   - `mermaid-diagrams` — house style for Mermaid diagrams used in manuals.
   - `glossary-sync` — how to extract and add new terms to the glossary.
@@ -74,7 +86,10 @@ the steps below, the skill does them automatically:
    3 rounds, then stops and surfaces whatever's left rather than looping
    forever.
 4. `quiz-builder` generates the companion `manuals/NN-topic-quiz.MD`.
-5. `ROADMAP.MD` status is updated (✅ if the review converged, 🚧 with a
+5. `deck-builder` (haiku) builds the presentation `site/slides/NN-slug/`
+   and registers the topic in `site/topics.js` (`status: "ready"`); then a
+   design review of the deck (opus, medium effort, `design:*` skills).
+6. `ROADMAP.MD` status is updated (✅ if the review converged, 🚧 with a
    note if the round cap was hit).
 
 Editing an *existing* manual (expand a section, fix something) doesn't need

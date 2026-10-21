@@ -1,0 +1,22 @@
+/* Общий дизайн-код курса для раздела «Материалы» (те же токены, что в site/assets) */
+:root, [data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0f172a;
+  --md-primary-fg-color--light: #334155;
+  --md-primary-fg-color--dark: #020617;
+  --md-accent-fg-color: #d9480f;
+  --md-text-font: "Inter";
+  --md-code-font: "JetBrains Mono";
+}
+[data-md-color-scheme="slate"] { --md-primary-fg-color: #0b1220; --md-accent-fg-color: #ff8a5c; }
+.md-banner { background: #f4f6fb; color: #0f172a; }
+.md-banner a { color: #d9480f; font-weight: 600; }
+.md-banner__inner { margin: .5rem auto; }
+.md-typeset h1 { font-weight: 800; letter-spacing: -.025em; }
+.md-typeset h2 { font-weight: 800; letter-spacing: -.02em; }
+.md-typeset .admonition, .md-typeset details { border-radius: 12px; }
+.md-typeset table:not([class]) { border-radius: 12px; overflow: hidden; }
+.md-typeset .deck-link {
+  display: inline-block; padding: .55em 1em; border-radius: 12px; font-weight: 700; color: #fff !important;
+  background: #0f172a; text-decoration: none;
+}
+.md-typeset .deck-link:hover { background: #d9480f; }
