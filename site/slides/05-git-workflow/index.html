@@ -578,7 +578,8 @@ body.flow .hero .stats { max-width: none; }
           "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"] } },
           "rules": [
         #@pr
-            { "type": "non_fast_forward" }, { "type": "required_linear_history" },
+            { "type": "non_fast_forward" },
+            { "type": "required_linear_history" },
             { "type": "pull_request", "parameters": {
                 "required_approving_review_count": 1,
                 "dismiss_stale_reviews_on_push": true,
