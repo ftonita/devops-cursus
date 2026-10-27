@@ -30,7 +30,8 @@ find "$OUT" -name '*.md' -exec sed -i.bak -E \
 # На сайте раздел лежит в /materials/, презентации — в /slides/, поэтому ../../../slides/ от страницы мануала.
 for f in "$OUT"/manuals/*-manual.md; do
   num=$(basename "$f" | cut -c1-2)
-  deck=$(ls -d site/slides/"$num"-*/ 2>/dev/null | head -1 || true)
+  # сортировка без завершающего "/": основная колода (03-docker) идёт раньше дополнительной (03-docker-intro)
+  deck=$(ls -d site/slides/"$num"-*/ 2>/dev/null | sed 's#/$##' | sort | head -1 || true)
   [ -n "$deck" ] || continue
   slug=$(basename "$deck")
   sed -i "1a\\

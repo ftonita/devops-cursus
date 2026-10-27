@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="only light">
+<meta name="description" content="Docker для новичков без терминов: что такое контейнер, чем он похож на грузовой контейнер в порту, какие есть альтернативы (Podman, containerd) и где это помогает в реальной работе.">
+<title>Docker простыми словами — DevOps Cursus</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='10' width='52' height='44' rx='10' fill='%230f172a'/%3E%3Cpath d='m18 26 8 6-8 6M30 40h14' stroke='%23fff' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap&subset=cyrillic" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/deck.css">
+<link rel="stylesheet" href="../../assets/cursus.css">
+<style>
+/* Стили только этой колоды (общие компоненты — в cursus.css) */
+[data-pane][hidden] { display: none !important; }
+.hero .stats { flex-direction: column; align-items: stretch; max-width: 460px; justify-self: end; width: 100%; }
+.hero .stat { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 14px; padding: 18px 22px; }
+.hero .stat span { margin: 0; font-size: 18px; }
+body.flow .hero .stats { max-width: none; justify-self: stretch; }
+body.flow .hero .stat { grid-template-columns: 72px 1fr; padding: 12px 16px; }
+body.flow .hero .stat span { font-size: 15px; }
+
+/* слайд «проблема»: три компьютера */
+.pcs { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
+.pc { background: #fff; border: 2px solid var(--line); border-radius: 18px; padding: 18px 20px; text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.pc .pi { font-size: 44px; line-height: 1; }
+.pc b { font-size: 20px; }
+.pc .ver { font: 700 18px var(--mono); background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 4px 12px; }
+.pc .res { font-weight: 700; font-size: 18px; }
+.pc.ok { border-color: #b3e2c8; background: #f6fdf9; } .pc.ok .res { color: #0e7a43; }
+.pc.bad { border-color: #fdb7c0; background: #fff6f7; } .pc.bad .res { color: #be123c; }
+.pc small { font-size: 16px; color: var(--ink2); }
+
+/* слайд «коробка» */
+.pack { border: 3px solid var(--dom); border-radius: 22px; background: var(--dom-soft); padding: 16px 20px 20px; }
+.pack .pk-h { font-weight: 800; font-size: 22px; color: var(--dom); margin-bottom: 12px; }
+.pack .pk-i { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.chip { background: #fff; border: 1.5px solid var(--dom-line); border-radius: 12px; padding: 12px 14px; font-weight: 600; font-size: 19px; }
+.chip.app { background: var(--dom); color: #fff; border-color: var(--dom); }
+.dests { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 14px; }
+.dest { background: #fff; border: 1.5px solid #b3e2c8; border-radius: 14px; padding: 12px; text-align: center; font-size: 17px; }
+.dest b { display: block; font-size: 30px; line-height: 1.2; }
+.dest span { color: #0e7a43; font-weight: 700; }
+.down { text-align: center; font-size: 28px; color: var(--mut); margin: 6px 0 0; }
+
+/* слайд «четыре слова» */
+.fw-pane { display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; align-items: stretch; }
+.fw-pane .card h3 { font-size: 24px; margin: 0 0 8px; }
+.fw-pane .card p { font-size: 19px; margin: 6px 0; color: var(--ink2); }
+.fw-pane .card p b { color: var(--ink); }
+.tech { background: var(--soft); border: 1px dashed #c7d0df; border-radius: 16px; padding: 18px 20px; font-size: 17px; color: var(--ink2); }
+.tech h4 { margin: 0 0 8px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--mut); }
+.tech code { display: block; font: 600 18px var(--mono); color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin: 6px 0; }
+
+/* слайд «дом и комнаты» */
+.cmp2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.cmp2 .card { padding: 18px 22px; }
+.cmp2 h3 { font-size: 22px; margin: 0; }
+.cmp2 .big { font-size: 40px; letter-spacing: 6px; margin: 6px 0 2px; }
+.cmp2 .st { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.cmp2 .lv { border: 1.5px solid var(--line); border-radius: 10px; padding: 7px 12px; text-align: center; font-weight: 700; font-size: 16px; background: #fff; }
+.cmp2 .lv small { font-weight: 500; color: var(--ink2); }
+.cmp2 .lv.app { background: var(--dom-soft); border-color: var(--dom-line); }
+.cmp2 .lv.gos { background: #fff7ed; border-color: #fed7aa; }
+.cmp2 .lv.ker { background: #ecfdf3; border-color: #b3e2c8; }
+.cmp2 .lv.hw { background: #e2e8f0; }
+.cmp2 .row2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.facts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 12px; }
+.facts div { background: var(--soft); border-radius: 10px; padding: 8px 10px; font-size: 16px; }
+.facts b { display: block; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--mut); }
+
+/* слайд «путь коробки» */
+.same { display: flex; align-items: center; gap: 12px; background: var(--dom-soft); border: 1px solid var(--dom-line); border-radius: 14px; padding: 10px 18px; font-size: 19px; font-weight: 700; margin-top: 6px; }
+.same .bx { font-size: 28px; }
+.pane-flex { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
+
+/* слайд «несколько коробок» */
+.stackv { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.svc { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 14px; background: #fff; border: 2px dashed #cbd5e1; border-radius: 16px; padding: 14px 18px; opacity: .55; transition: all .35s; }
+.svc .si2 { font-size: 36px; text-align: center; }
+.svc b { font-size: 20px; display: block; }
+.svc small { color: var(--ink2); font-size: 16px; }
+.svc .stt { font: 700 15px var(--mono); color: var(--mut); }
+.stackv.on .svc { opacity: 1; border-style: solid; border-color: #b3e2c8; background: #f6fdf9; }
+.stackv.on .svc .stt { color: #0e7a43; }
+.stackv.on .svc:nth-child(2) { transition-delay: .25s; } .stackv.on .svc:nth-child(3) { transition-delay: .5s; }
+.stackv .wires { text-align: center; color: var(--mut); font-size: 16px; }
+
+/* слайд «как работают альтернативы» */
+.chain { display: flex; align-items: stretch; gap: 8px; flex-wrap: nowrap; }
+.nd { flex: 1; min-width: 0; background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 10px; text-align: center; }
+.nd b { display: block; font-size: 18px; }
+.nd small { display: block; font-size: 15px; color: var(--ink2); margin-top: 3px; }
+.nd.c { background: var(--dom-soft); border-color: var(--dom-line); }
+.ar { align-self: center; color: var(--mut); font-size: 26px; flex: none; }
+.imgbar { background: var(--dom); color: #fff; border-radius: 14px; padding: 12px 18px; font-size: 19px; font-weight: 700; text-align: center; }
+
+/* ошибки */
+.mist { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+.mist .card { padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+.mist .m-bad { font-weight: 700; font-size: 18px; }
+.mist .m-bad::before { content: "✗ "; color: #be123c; }
+.mist .m-why { font-size: 16px; color: var(--ink2); }
+.mist .m-ok { font-size: 17px; border-top: 1px solid var(--line); padding-top: 8px; }
+.mist .m-ok::before { content: "✓ "; color: #0e8a4f; font-weight: 800; }
+
+.tabnote { font-size: 17px; color: var(--ink2); }
+.mc2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+.mc2 .mc { padding: 14px 18px; }
+.mc2 .mc .q { font-size: 19px; }
+.mc2 .opts button { font-size: 17px; }
+.cmd-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cmd-btns .btn { justify-content: flex-start; font-family: var(--mono); font-size: 16px; text-align: left; }
+.boxst { display: flex; align-items: center; gap: 16px; font-size: 20px; }
+.boxst .bi { font-size: 46px; transition: filter .3s, opacity .3s; }
+.boxst.off .bi { filter: grayscale(1); opacity: .35; }
+.boxst.stop .bi { filter: grayscale(1); opacity: .7; }
+.boxst b { display: block; }
+.boxst span { color: var(--ink2); font-size: 17px; }
+
+/* Крупный масштаб: аудитория — новички, колоду смотрят с задних рядов */
+.steps-row > .sr { padding: 18px 12px; }
+.steps-row > .sr .si { font-size: 46px; }
+.steps-row > .sr b { font-size: 23px; margin-top: 8px; }
+.steps-row > .sr span:not(.si) { font-size: 18px; }
+.pain .was, .pain .now { padding: 26px 30px; }
+.pain h3 { font-size: 27px; }
+.pain ul { font-size: 23px; margin-top: 14px; }
+.pain li { margin: 9px 0; }
+.pain code.i { display: inline-block; margin-top: 10px; font-size: 20px; }
+.callout { font-size: 23px; padding: 16px 22px; }
+.analogy { font-size: 22px; padding: 16px 22px; }
+.analogy .ai { font-size: 32px; }
+.pc { padding: 28px 22px; gap: 12px; }
+.pc .pi { font-size: 72px; }
+.pc b { font-size: 26px; }
+.pc .ver { font-size: 22px; padding: 6px 16px; }
+.pc .res { font-size: 22px; }
+.pack .pk-h { font-size: 28px; margin-bottom: 16px; }
+.chip { font-size: 24px; padding: 20px 20px; }
+.dest { font-size: 21px; padding: 18px; } .dest b { font-size: 42px; }
+.down { font-size: 26px; margin: 12px 0 4px; }
+.split .r .ent { padding: 20px 22px; } .split .r .ent .et { font-size: 24px; } .split .r .ent .ed { font-size: 20px; }
+.split .r .ent .ei { width: 56px; height: 56px; font-size: 30px; }
+.fw-pane { flex: 1; }
+.fw-pane .card { display: flex; flex-direction: column; justify-content: center; padding: 30px 34px; }
+.fw-pane .card h3 { font-size: 32px; margin-bottom: 14px; }
+.fw-pane .card p { font-size: 24px; margin: 10px 0; }
+.tech { font-size: 21px; padding: 24px 26px; display: flex; flex-direction: column; justify-content: center; }
+.tech code { font-size: 22px; padding: 12px 16px; margin: 8px 0; }
+.cmp2 h3 { font-size: 28px; } .cmp2 .big { font-size: 56px; margin: 10px 0 8px; }
+.cmp2 .lv { font-size: 20px; padding: 11px 14px; } .cmp2 .card { padding: 24px 28px; }
+.facts div { font-size: 20px; padding: 12px 14px; } .facts b { font-size: 14px; }
+.pane-flex { flex: 1; }
+.pane-flex .card { display: flex; flex-direction: column; justify-content: center; padding: 30px 34px; }
+.pane-flex .card h3 { font-size: 30px; margin: 0 0 12px; } .pane-flex .card p { font-size: 24px; margin: 0; }
+.same { font-size: 23px; padding: 16px 24px; } .same .bx { font-size: 38px; }
+.svc { padding: 26px 26px; grid-template-columns: 80px 1fr auto; } .svc .si2 { font-size: 50px; }
+.svc b { font-size: 28px; } .svc small { font-size: 20px; } .svc .stt { font-size: 18px; }
+.stackv .wires { font-size: 19px; padding-top: 6px; }
+.nd { padding: 22px 12px; } .nd b { font-size: 22px; } .nd small { font-size: 18px; margin-top: 8px; }
+.imgbar { font-size: 24px; padding: 18px 22px; }
+.mist { gap: 18px; } .mist .card { padding: 22px 24px; gap: 12px; }
+.mist .m-bad { font-size: 23px; } .mist .m-why { font-size: 19px; } .mist .m-ok { font-size: 20px; padding-top: 12px; }
+.flip { min-height: 210px; padding: 22px 24px; } .flip .q { font-size: 23px; } .flip .a { font-size: 20px; } .flip .tap { font-size: 18px; }
+.qa { gap: 18px; }
+.mc2 .mc { padding: 22px 26px; gap: 14px; } .mc2 .mc .q { font-size: 24px; }
+.mc2 .opts button { font-size: 20px; padding: 14px 16px; } .mc .why { font-size: 19px; }
+.term pre { font-size: 19px; line-height: 1.55; min-height: 360px; }
+.boxst { font-size: 26px; } .boxst .bi { font-size: 64px; } .boxst span { font-size: 20px; }
+.cmd-btns { gap: 12px; } .cmd-btns .btn { font-size: 19px; padding: 14px 16px; }
+#simNote { font-size: 20px; }
+.compact .steps-row > .sr { padding: 12px 10px; } .compact .steps-row > .sr .si { font-size: 38px; }
+.compact .fw-pane .card { padding: 22px 30px; } .compact .fw-pane .card h3 { font-size: 28px; margin-bottom: 8px; } .compact .fw-pane .card p { font-size: 22px; margin: 6px 0; }
+.compact .fw-pane { flex: 0 0 auto; }
+.compact .tech { padding: 20px 24px; font-size: 20px; }
+.flip { min-height: 185px !important; }
+.mc2 .mc .q { font-size: 28px !important; } .mc2 .opts button { font-size: 23px !important; padding: 18px 20px !important; } .mc2 .mc .why { font-size: 21px !important; }
+.nd { min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
+</style>
+</head>
+<body class="theme-docker">
+<noscript><div class="noscript">Для презентации нужен JavaScript. Текстовая версия — <a href="../../materials/manuals/03-docker-manual/">мануал</a>.</div></noscript>
+<div class="stage">
+<main class="deck" id="deck">
+
+<!-- ======================= 01 ТИТУЛ ======================= -->
+<section data-title="Docker простыми словами" class="dom-dk">
+  <div class="sh"><div class="kicker"><span class="n"></span>Тема 03 · Часть 2 · Для начинающих</div></div>
+  <div class="hero">
+    <div>
+      <h1>Docker<br>простыми словами</h1>
+      <p class="hook">«У меня на компьютере работает!» — фраза, после которой у команды начинается плохой день. <em>Docker придуман, чтобы её больше не слышать.</em></p>
+      <p class="lede">За ≈ 15 минут, без сложных терминов: что такое Docker, чем его можно заменить и где он реально помогает.</p>
+      <div class="agenda">
+        <span><b>1</b>Идея</span><span><b>2</b>Из жизни</span><span><b>3</b>Как устроено</span>
+        <span><b>4</b>Руками</span><span><b>5</b>Альтернативы</span><span><b>6</b>Проверка</span>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>📦</b><span>одна «коробка»: программа и всё, что ей нужно для работы</span></div>
+      <div class="stat"><b>1</b><span>команда, чтобы запустить готовый сервис</span></div>
+      <div class="stat"><b>0</b><span>споров «а у меня же работало»</span></div>
+    </div>
+  </div>
+  <div class="hint"><kbd>→</kbd> далее · <kbd>F</kbd> полный экран · <kbd>P</kbd> режим докладчика · <kbd>M</kbd> меню</div>
+  <aside class="notes">
+    <p>Это вторая, «человеческая» часть темы: в первой мы разбирали Dockerfile, слои и безопасность, здесь — идея и польза. Спросите, кто слышал фразу «у меня работает», и пообещайте: к концу будет понятно, как с ней покончить.</p>
+  </aside>
+</section>
+
+<!-- ======================= 02 ИДЕЯ ИЗ ПОРТА ======================= -->
+<section data-title="Идея пришла из порта" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Идея</div>
+    <h2>Docker придумали по образцу грузового контейнера</h2>
+    <p class="lede">Название не случайное: «container» — это та самая стальная коробка, в которой возят грузы по всему миру.</p>
+  </div>
+  <div class="body col center-v">
+    <div class="pain">
+      <div class="was"><h3>⚓ Порт до стандартных коробок</h3><ul><li>Мешки, бочки, ящики — у каждого груза свой размер</li><li>Каждый груз грузят и крепят по-своему</li><li>На каждом этапе его перекладывают — часть портится</li></ul></div>
+      <div class="arrow">→</div>
+      <div class="now"><h3>📦 Порт со стандартной коробкой</h3><ul><li>Одна форма для любого груза</li><li>Кран, поезд, грузовик и корабль работают с ней одинаково</li><li>Что внутри — порту не важно, коробку не вскрывают</li></ul></div>
+    </div>
+    <div class="analogy" style="margin-top:22px"><span class="ai">💡</span><div><span class="al">Главная мысль</span>Docker делает то же самое для программ: упаковал один раз — и любой компьютер умеет эту «коробку» запустить, не интересуясь, что внутри.</div></div>
+  </div>
+  <aside class="notes"><p>Расскажите про порт своими словами: раньше грузчики перекладывали всё вручную, потом появилась стандартная коробка. Подчеркните: стандартом стала форма коробки, а не груз. Так же и в Docker: стандартна упаковка.</p></aside>
+</section>
+
+<!-- ======================= 03 ПРОБЛЕМА: ТРИ КОМПЬЮТЕРА ======================= -->
+<section data-title="Одна программа — три компьютера" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Проблема</div>
+    <h2>Программа одна, а компьютеры у всех разные</h2>
+    <p class="lede">Переключайте режим: смотрите, что происходит с одной и той же программой. Версии условные, для примера.</p>
+  </div>
+  <div class="body col">
+    <div class="seg" data-group="pc" role="group" aria-label="Режим" style="align-self:flex-start">
+      <button data-tab="no" data-default>Без Docker</button>
+      <button data-tab="yes">С Docker</button>
+    </div>
+    <div data-pane="no" data-group="pc" class="pcs">
+      <div class="pc ok"><div class="pi">💻</div><b>Ноутбук разработчика</b><span class="ver">Python 3.12</span><span class="res">✓ «У меня работает!»</span></div>
+      <div class="pc bad"><div class="pi">🧪</div><b>Компьютер тестировщика</b><span class="ver">Python 3.8</span><span class="res">✗ ошибка: версия не подходит</span></div>
+      <div class="pc bad"><div class="pi">🖥️</div><b>Сервер</b><span class="ver">Python 3.10</span><span class="res">✗ падает при запуске</span></div>
+    </div>
+    <div data-pane="yes" data-group="pc" class="pcs">
+      <div class="pc ok"><div class="pi">💻</div><b>Ноутбук разработчика</b><span class="ver">📦 Python 3.12 внутри</span><span class="res">✓ работает</span></div>
+      <div class="pc ok"><div class="pi">🧪</div><b>Компьютер тестировщика</b><span class="ver">📦 Python 3.12 внутри</span><span class="res">✓ работает</span></div>
+      <div class="pc ok"><div class="pi">🖥️</div><b>Сервер</b><span class="ver">📦 Python 3.12 внутри</span><span class="res">✓ работает</span></div>
+    </div>
+    <div class="callout">Код тот же. Отличается <b>всё вокруг него</b>: версии языка, библиотек, настройки. Docker берёт «всё вокруг» с собой.</div>
+  </div>
+  <aside class="notes"><p>Сначала покажите «Без Docker»: у разработчика всё работает, у остальных нет, и все виноваты друг в друге. Потом переключите на «С Docker»: окружение едет вместе с программой, поэтому везде одинаково.</p></aside>
+</section>
+
+<!-- ======================= 04 ЧТО ТАКОЕ DOCKER ======================= -->
+<section data-title="Docker — коробка для программы" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Идея</div>
+    <h2>Docker — это коробка для программы и всего, что ей нужно</h2>
+    <p class="lede">Один раз упаковали — дальше коробка работает одинаково где угодно.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <div class="pack">
+        <div class="pk-h">📦 Коробка (по-научному — контейнер)</div>
+        <div class="pk-i">
+          <div class="chip app">🧩 Ваша программа</div>
+          <div class="chip">🐍 Нужная версия языка</div>
+          <div class="chip">📚 Библиотеки</div>
+          <div class="chip">⚙️ Настройки</div>
+        </div>
+      </div>
+      <div class="down" aria-hidden="true">↓ запускается без дополнительной настройки ↓</div>
+      <div class="dests">
+        <div class="dest"><b>💻</b>ноутбук<br><span>работает</span></div>
+        <div class="dest"><b>☁️</b>сервер в облаке<br><span>работает</span></div>
+        <div class="dest"><b>🧑‍🤝‍🧑</b>компьютер коллеги<br><span>работает</span></div>
+      </div>
+    </div>
+    <div class="r">
+      <div class="ent"><div class="ei">🛠️</div><div><div class="et">Docker — это программа</div><div class="ed">Она умеет упаковывать приложения в такие коробки и запускать их на вашем компьютере или сервере.</div></div></div>
+      <div class="ent"><div class="ei">🔒</div><div><div class="et">Коробки изолированы</div><div class="ed">Что происходит в одной коробке, не мешает соседней и вашей системе.</div></div></div>
+      <div class="ent"><div class="ei">⚡</div><div><div class="et">Запуск за секунды</div><div class="ed">Коробка не включает «целый компьютер»: она использует движок вашей системы.</div></div></div>
+    </div>
+  </div>
+  <aside class="notes"><p>Покажите, что внутри коробки: программа, язык, библиотеки и настройки. Снизу три места, где она запустится. Не углубляйтесь в «как» — это будет через слайд про виртуальные машины.</p></aside>
+</section>
+
+<!-- ======================= 05 ЧЕТЫРЕ СЛОВА ======================= -->
+<section data-title="Четыре слова" class="dom-id">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Словарь</div>
+    <h2>Четыре слова — и вы понимаете разговоры про Docker</h2>
+    <p class="lede">Нажимайте на слова. Сравнение — с компьютерной игрой: установочный файл и запущенная игра.</p>
+  </div>
+  <div class="body col">
+    <div class="steps-row" data-group="words">
+      <button class="sr" data-tab="rec" data-default><span class="si">📝</span><b>Рецепт</b><span>Dockerfile</span></button>
+      <button class="sr" data-tab="img"><span class="si">🧱</span><b>Образ</b><span>image</span></button>
+      <button class="sr" data-tab="reg"><span class="si">🏬</span><b>Склад</b><span>registry</span></button>
+      <button class="sr" data-tab="ctr"><span class="si">▶️</span><b>Контейнер</b><span>container</span></button>
+    </div>
+    <div data-pane="rec" data-group="words" class="fw-pane">
+      <div class="card"><h3>📝 Рецепт — инструкция по сборке</h3><p>Текстовый файл: «возьми такую основу, добавь мою программу, запускай вот так».</p><p><b>Аналогия:</b> рецепт блюда или чертёж мебели.</p></div>
+      <div class="tech"><h4>Как выглядит</h4><code>FROM python:3.12</code><code>COPY . /app</code><code>CMD ["python", "app.py"]</code></div>
+    </div>
+    <div data-pane="img" data-group="words" class="fw-pane" hidden>
+      <div class="card"><h3>🧱 Образ — готовая упакованная коробка</h3><p>Результат сборки по рецепту. Его <b>нельзя менять</b>, можно только собрать новый.</p><p><b>Аналогия:</b> установочный файл игры. Он один и тот же у всех.</p></div>
+      <div class="tech"><h4>Команда</h4><code>docker build -t myapp .</code><span>собрать образ по рецепту</span></div>
+    </div>
+    <div data-pane="reg" data-group="words" class="fw-pane" hidden>
+      <div class="card"><h3>🏬 Склад — где хранятся образы</h3><p>Туда загружают образы, оттуда скачивают по названию. Самый известный склад — Docker Hub.</p><p><b>Аналогия:</b> магазин приложений для коробок.</p></div>
+      <div class="tech"><h4>Команды</h4><code>docker push myapp</code><code>docker pull nginx</code><span>загрузить на склад · скачать со склада</span></div>
+    </div>
+    <div data-pane="ctr" data-group="words" class="fw-pane" hidden>
+      <div class="card"><h3>▶️ Контейнер — запущенная коробка</h3><p>Образ, который «включили». Из одного образа можно запустить сколько угодно контейнеров.</p><p><b>Аналогия:</b> запущенная игра. Закрыли и удалили — установочный файл остался.</p></div>
+      <div class="tech"><h4>Команда</h4><code>docker run nginx</code><span>запустить контейнер из образа</span></div>
+    </div>
+  </div>
+  <aside class="notes"><p>Пройдите по четырём кнопкам слева направо: рецепт → образ → склад → контейнер. Главное, что должны унести: образ — неизменяемая заготовка, контейнер — её запущенная копия. Термины на английском оставьте рядом, чтобы студенты узнавали их в документации.</p></aside>
+</section>
+
+<!-- ======================= 06 КОНТЕЙНЕР VS ВМ ======================= -->
+<section data-title="Контейнер и виртуальная машина" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Как устроено</div>
+    <h2>Контейнер — это комната, а не отдельный дом</h2>
+    <p class="lede">Виртуальная машина — отдельный дом на своём фундаменте. Контейнеры — комнаты в одном доме с общим фундаментом.</p>
+  </div>
+  <div class="body col">
+    <div class="cmp2">
+      <div class="card">
+        <h3>🏘️ Виртуальная машина</h3>
+        <div class="big" aria-hidden="true">🏠 🏠</div>
+        <div class="st">
+          <div class="row2" style="grid-template-columns:1fr 1fr"><div class="lv app">Программа A</div><div class="lv app">Программа B</div></div>
+          <div class="row2" style="grid-template-columns:1fr 1fr"><div class="lv gos">Своя система<small> (полная)</small></div><div class="lv gos">Своя система<small> (полная)</small></div></div>
+          <div class="lv hw">Железо + гипервизор</div>
+        </div>
+        <div class="facts"><div><b>Размер</b>гигабайты</div><div><b>Старт</b>минуты</div><div><b>Граница</b>очень крепкая</div></div>
+      </div>
+      <div class="card">
+        <h3>🏢 Контейнеры</h3>
+        <div class="big" aria-hidden="true">🚪 🚪 🚪</div>
+        <div class="st">
+          <div class="row2"><div class="lv app">Коробка A</div><div class="lv app">Коробка B</div><div class="lv app">Коробка C</div></div>
+          <div class="lv ker">Одна общая система компьютера (ядро)</div>
+          <div class="lv hw">Железо</div>
+        </div>
+        <div class="facts"><div><b>Размер</b>десятки–сотни МБ</div><div><b>Старт</b>секунды</div><div><b>Граница</b>помягче</div></div>
+      </div>
+    </div>
+    <div class="callout">На практике их не противопоставляют: часто контейнеры запускают <b>внутри</b> виртуальных машин — получается и крепкая граница, и лёгкость.</div>
+  </div>
+  <aside class="notes"><p>Аналогия: у виртуальной машины свой дом, фундамент и коммуникации — надёжно, но дорого и долго строить. Контейнер — комната в общем доме: быстро, дёшево, но стены тоньше. Цифры из мануала: ВМ — гигабайты и минуты, контейнеры — десятки-сотни МБ и секунды.</p></aside>
+</section>
+
+<!-- ======================= 07 ТЕРМИНАЛ-СИМУЛЯТОР ======================= -->
+<section data-title="Запустим сайт одной командой" class="dom-us">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Попробуйте сами</div>
+    <h2>Веб-сервер без установки — одной командой</h2>
+    <p class="lede">Нажимайте кнопки по порядку (или в любом порядке — посмотрите, что будет). Это тренажёр, настоящий Docker не нужен.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <div class="term"><div class="tt"><i></i><i></i><i></i>&nbsp;терминал</div><pre id="simOut" aria-live="polite"><span class="dim">Нажмите первую кнопку справа.</span></pre></div>
+    </div>
+    <div class="r">
+      <div class="card">
+        <div class="boxst off" id="boxSt"><span class="bi" aria-hidden="true">📦</span><div><b id="boxTitle">Коробки нет</b><span id="boxText">Образ nginx на компьютере не скачан.</span></div></div>
+      </div>
+      <div class="cmd-btns">
+        <button class="btn acc" id="bRun">① docker run</button>
+        <button class="btn" id="bPs">② docker ps</button>
+        <button class="btn" id="bCurl">③ открыть сайт</button>
+        <button class="btn" id="bStop">④ docker stop</button>
+        <button class="btn" id="bRm">⑤ docker rm</button>
+        <button class="btn ghost" id="bReset">⟲ Сбросить</button>
+      </div>
+      <div class="callout" id="simNote">Первый запуск скачивает образ со склада. Повторный — уже из локальной копии.</div>
+    </div>
+  </div>
+  <aside class="notes"><p>Нажмите «docker run»: Docker сам скачал образ nginx и запустил контейнер. Потом «docker ps» — видно работающую коробку, «открыть сайт» — отвечает. Остановите и удалите: компьютер остаётся чистым. Если запустить снова, образ уже скачан и всё пройдёт мгновенно.</p></aside>
+</section>
+
+<!-- ======================= 08 СЦЕНАРИИ ИЗ ЖИЗНИ ======================= -->
+<section data-title="Где это помогает на практике" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Зачем это нужно</div>
+    <h2>Пять ситуаций, в которых Docker экономит день</h2>
+    <p class="lede">Нажмите на ситуацию: что было без Docker и как стало.</p>
+  </div>
+  <div class="body col">
+    <div class="steps-row" data-group="cases">
+      <button class="sr" data-tab="new" data-default><span class="si">🧑‍💻</span><b>Новичок в команде</b><span>первый день</span></button>
+      <button class="sr" data-tab="qa"><span class="si">🧪</span><b>Баг у коллеги</b><span>воспроизвести</span></button>
+      <button class="sr" data-tab="two"><span class="si">🗂️</span><b>Два проекта</b><span>разные версии</span></button>
+      <button class="sr" data-tab="try"><span class="si">🧹</span><b>Попробовать</b><span>и не оставить следов</span></button>
+      <button class="sr" data-tab="back"><span class="si">⏪</span><b>Релиз сломался</b><span>откатиться</span></button>
+    </div>
+    <div data-pane="new" data-group="cases"><div class="pain">
+      <div class="was"><h3>😖 Без Docker</h3><ul><li>Многостраничная инструкция по настройке, которая устарела</li><li>День-два на то, чтобы просто запустить проект</li><li>Спрашивает у соседа, почему не стартует</li></ul></div>
+      <div class="arrow">→</div>
+      <div class="now"><h3>😌 С Docker</h3><ul><li>Скачал проект, выполнил одну команду</li><li>Проект работает вместе с базой данных</li><li>Первый день — на задачу, а не на настройку</li></ul><code class="i">docker compose up</code></div>
+    </div></div>
+    <div data-pane="qa" data-group="cases" hidden><div class="pain">
+      <div class="was"><h3>😖 Без Docker</h3><ul><li>«У меня не воспроизводится» — у каждого своя версия всего</li><li>Часы уходят на выяснение, чем отличаются компьютеры</li><li>Баг есть, но поймать его не удаётся</li></ul></div>
+      <div class="arrow">→</div>
+      <div class="now"><h3>😌 С Docker</h3><ul><li>Коллега присылает название образа</li><li>У вас запускается ровно то же самое окружение</li><li>Баг воспроизводится — значит, можно чинить</li></ul><code class="i">docker run company/app:1.4.2</code></div>
+    </div></div>
+    <div data-pane="two" data-group="cases" hidden><div class="pain">
+      <div class="was"><h3>😖 Без Docker</h3><ul><li>Проекту А нужна старая версия, проекту Б — новая</li><li>Две версии на одном компьютере спорят друг с другом</li><li>Пакеты ставятся «поверх» и ломают соседей</li></ul></div>
+      <div class="arrow">→</div>
+      <div class="now"><h3>😌 С Docker</h3><ul><li>У каждого проекта своя коробка со своими версиями</li><li>Коробки друг о друге не знают и не конфликтуют</li><li>Переключение между проектами — запуск другой коробки</li></ul></div>
+    </div></div>
+    <div data-pane="try" data-group="cases" hidden><div class="pain">
+      <div class="was"><h3>😖 Без Docker</h3><ul><li>Чтобы попробовать базу данных, её нужно установить</li><li>После экспериментов остаются файлы, службы, настройки</li><li>Страшно «засорить» рабочий компьютер</li></ul></div>
+      <div class="arrow">→</div>
+      <div class="now"><h3>😌 С Docker</h3><ul><li>Запустили базу в контейнере, поэкспериментировали</li><li>Удалили контейнер — компьютер как был</li><li>Хотите другую версию — запустите другой образ</li></ul><code class="i">docker run postgres:17</code></div>
+    </div></div>
+    <div data-pane="back" data-group="cases" hidden><div class="pain">
+      <div class="was"><h3>😖 Без Docker</h3><ul><li>Новая версия сломалась в проде, а старую «надо вспомнить, как ставить»</li><li>Откат — это ещё один рискованный выкат</li><li>Простой, нервы, ночные созвоны</li></ul></div>
+      <div class="arrow">→</div>
+      <div class="now"><h3>😌 С Docker</h3><ul><li>Каждая версия — отдельный образ на складе</li><li>Откат — запуск предыдущей коробки, которая уже проверена</li><li>Предсказуемо и быстро</li></ul><code class="i">docker run app:1.4.1</code></div>
+    </div></div>
+    <div class="analogy"><span class="ai">🍕</span><div><span class="al">Как доставка еды</span>Кухня упаковала заказ один раз. Курьер везёт ту же коробку, клиенту не нужно знать рецепт — просто открывает и ест.</div></div>
+  </div>
+  <aside class="notes"><p>Пройдите все пять ситуаций, но спросите зал, какая им ближе. Новичкам чаще всего откликается «первый день в команде» и «у меня не воспроизводится». Идеи про откат и два проекта подкрепляются мануалом: версии образов хранятся на складе, так что предыдущую коробку можно запустить снова.</p></aside>
+</section>
+
+<!-- ======================= 09 ПУТЬ КОРОБКИ ======================= -->
+<section data-title="Путь коробки от ноутбука до пользователя" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Как это выглядит в работе</div>
+    <h2>Коробку собирают один раз — а едет она везде</h2>
+    <p class="lede">Нажмите на этап, чтобы увидеть, что на нём происходит.</p>
+  </div>
+  <div class="body col">
+    <div class="steps-row" data-group="path">
+      <button class="sr" data-tab="dev" data-default><span class="si">💻</span><b>Разработчик</b><span>собирает коробку</span></button>
+      <button class="sr" data-tab="reg"><span class="si">🏬</span><b>Склад</b><span>хранит версии</span></button>
+      <button class="sr" data-tab="test"><span class="si">🧪</span><b>Тест</b><span>проверяют коробку</span></button>
+      <button class="sr" data-tab="prod"><span class="si">🌍</span><b>Сервер</b><span>работает для людей</span></button>
+    </div>
+    <div data-pane="dev" data-group="path" class="pane-flex">
+      <div class="card"><h3>💻 Разработчик пишет код и собирает коробку</h3><p class="muted">Код готов → по рецепту собирается образ с номером версии. Дальше его не меняют.</p></div>
+      <div class="tech"><h4>Команда</h4><code>docker build -t app:1.4.2 .</code></div>
+    </div>
+    <div data-pane="reg" data-group="path" class="pane-flex" hidden>
+      <div class="card"><h3>🏬 Образ отправляется на склад</h3><p class="muted">Склад хранит все версии: 1.4.0, 1.4.1, 1.4.2… Любую можно скачать позже.</p></div>
+      <div class="tech"><h4>Команда</h4><code>docker push app:1.4.2</code></div>
+    </div>
+    <div data-pane="test" data-group="path" class="pane-flex" hidden>
+      <div class="card"><h3>🧪 Тестовая среда скачивает ту же коробку</h3><p class="muted">Тестируют именно то, что поедет к пользователям. Никакой пересборки «под тест».</p></div>
+      <div class="tech"><h4>Команды</h4><code>docker pull app:1.4.2</code><code>docker run app:1.4.2</code></div>
+    </div>
+    <div data-pane="prod" data-group="path" class="pane-flex" hidden>
+      <div class="card"><h3>🌍 Та же коробка запускается на сервере</h3><p class="muted">Если что-то пошло не так — запускают предыдущую версию, она лежит на складе.</p></div>
+      <div class="tech"><h4>Команды</h4><code>docker pull app:1.4.2</code><code>docker run app:1.4.2</code></div>
+    </div>
+    <div class="same"><span class="bx">📦</span> На каждом этапе — одна и та же коробка <code class="i">app:1.4.2</code>. Меняется место, содержимое — нет.</div>
+  </div>
+  <aside class="notes"><p>Покажите путь слева направо. Мысль: образ собирается один раз и дальше только переезжает — это и есть «образ неизменяем». Если студенты знакомы с CI/CD, свяжите с первой темой: пайплайн делает это автоматически.</p></aside>
+</section>
+
+<!-- ======================= 10 НЕСКОЛЬКО КОРОБОК: COMPOSE ======================= -->
+<section data-title="Несколько коробок — целый сервис" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Из жизни</div>
+    <h2>Сервис — это несколько коробок, как детали конструктора</h2>
+    <p class="lede">Сайту нужна база данных и быстрая память (кэш). Каждая часть — своя коробка, а поднимает их все одна команда.</p>
+  </div>
+  <div class="body split">
+    <div class="l">
+      <script type="text/x-code" data-lang="yaml" data-title="compose.yaml" data-cls="lg">
+        services:
+          site:            # наш сайт
+            build: .
+          db:              # база данных
+            image: postgres:17-alpine
+          cache:           # быстрая память
+            image: redis:7-alpine
+      </script>
+      <div class="analogy"><span class="ai">🧩</span><div><span class="al">Как конструктор</span>В файле перечислены детали. Docker достаёт их со склада и собирает вместе.</div></div>
+      <div style="display:flex;gap:10px"><button class="btn acc" data-toggle="#stackv" aria-pressed="false" style="font-size:22px;padding:16px 26px">▶ docker compose up</button></div>
+    </div>
+    <div class="r">
+      <div class="stackv" id="stackv">
+        <div class="svc"><div class="si2">🌐</div><div><b>Сайт</b><small>то, что видят пользователи</small></div><span class="stt" data-s="off">не запущен</span></div>
+        <div class="svc"><div class="si2">🐘</div><div><b>База данных</b><small>хранит информацию</small></div><span class="stt">не запущен</span></div>
+        <div class="svc"><div class="si2">⚡</div><div><b>Кэш</b><small>ускоряет частые запросы</small></div><span class="stt">не запущен</span></div>
+        <div class="wires">Соединяются друг с другом по именам: сайт обращается к <code class="i">db</code>, а не ищет адрес</div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>Нажмите «docker compose up» — все три коробки «зажигаются». Объясните: файл описывает, из каких коробок состоит сервис, а Docker Compose поднимает их вместе и сам соединяет. Это и есть «окружение в репозитории»: новичку достаточно одной команды.</p></aside>
+</section>
+
+<!-- ======================= 11 АЛЬТЕРНАТИВЫ ======================= -->
+<section data-title="Альтернативы Docker" class="dom-id">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Альтернативы</div>
+    <h2>Docker — не единственный способ запускать контейнеры</h2>
+    <p class="lede">Как марки автомобилей: разные производители, но дороги одни.</p>
+  </div>
+  <div class="body col compact">
+    <div class="steps-row" data-group="alt">
+      <button class="sr" data-tab="pod" data-default><span class="si">🦭</span><b>Podman</b><span>«Docker без диспетчера»</span></button>
+      <button class="sr" data-tab="cd"><span class="si">⚙️</span><b>containerd + nerdctl</b><span>движок «изнутри»</span></button>
+      <button class="sr" data-tab="crio"><span class="si">☸️</span><b>CRI-O</b><span>для Kubernetes</span></button>
+      <button class="sr" data-tab="desk"><span class="si">🖥️</span><b>Rancher Desktop, Colima</b><span>«Docker для ноутбука»</span></button>
+    </div>
+    <div data-pane="pod" data-group="alt" class="fw-pane">
+      <div class="card"><h3>🦭 Podman</h3><p><b>Что это:</b> программа, которая запускает контейнеры почти теми же командами: <code class="i">podman run</code> вместо <code class="i">docker run</code>.</p><p><b>Чем отличается:</b> не нужен постоянно работающий «диспетчер» (демон), а запуск без прав администратора (rootless) включён по умолчанию.</p></div>
+      <div class="tech"><h4>Когда выбирают</h4>Когда важна безопасность «из коробки» и нет желания держать фоновый сервис. Образы из Docker запускаются без переделки.</div>
+    </div>
+    <div data-pane="cd" data-group="alt" class="fw-pane" hidden>
+      <div class="card"><h3>⚙️ containerd и nerdctl</h3><p><b>Что это:</b> containerd — «движок», который работает внутри самого Docker. Это отдельный проект, и Kubernetes использует его напрямую.</p><p><b>nerdctl</b> — командная строка в стиле Docker для этого движка.</p></div>
+      <div class="tech"><h4>Когда выбирают</h4>Когда нужен только движок без «обвеса» Docker — например, на серверах с Kubernetes.</div>
+    </div>
+    <div data-pane="crio" data-group="alt" class="fw-pane" hidden>
+      <div class="card"><h3>☸️ CRI-O</h3><p><b>Что это:</b> движок контейнеров, сделанный специально для Kubernetes.</p><p>Вы вряд ли запустите его руками: он работает «под капотом» кластера и запускает те же образы.</p></div>
+      <div class="tech"><h4>Когда встретите</h4>В кластерах Kubernetes. Для знакомства с контейнерами он не нужен.</div>
+    </div>
+    <div data-pane="desk" data-group="alt" class="fw-pane" hidden>
+      <div class="card"><h3>🖥️ Rancher Desktop и Colima</h3><p><b>Что это:</b> готовые приложения, чтобы пользоваться контейнерами на ноутбуке с Mac или Windows. Rancher Desktop — с окошком, Colima — из терминала.</p><p>Внутри у них контейнерный движок, а снаружи привычные команды.</p></div>
+      <div class="tech"><h4>Когда выбирают</h4>Когда нужен Docker-подобный опыт на ноутбуке без Docker Desktop.</div>
+    </div>
+    <div class="callout" style="font-size:20px;padding:12px 20px">Отдельно есть инструменты, которые только <b>собирают</b> образы (BuildKit, Buildah, Kaniko) — обычно в CI-пайплайне.</div>
+  </div>
+  <aside class="notes"><p>Задача слайда — снять страх «а вдруг Docker не тот». Скажите: идея контейнеров шире одного продукта. Для новичка разницы почти нет: команды похожи, образы одинаковые. Выбор чаще диктуют компания, платформа или безопасность.</p></aside>
+</section>
+
+<!-- ======================= 12 КАК РАБОТАЮТ АЛЬТЕРНАТИВЫ ======================= -->
+<section data-title="Как это работает у разных инструментов" class="dom-dk">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Альтернативы</div>
+    <h2>Инструменты разные, а образ — один и тот же</h2>
+    <p class="lede">Переключайте инструмент: цепочка от команды до запущенной коробки меняется, а образ остаётся прежним.</p>
+  </div>
+  <div class="body col">
+    <div class="seg" data-group="eng" role="group" aria-label="Инструмент" style="align-self:flex-start">
+      <button data-tab="d" data-default>Docker</button>
+      <button data-tab="p">Podman</button>
+      <button data-tab="k">Kubernetes</button>
+    </div>
+    <div class="imgbar">📦 Образ в общем формате (стандарт OCI) — один и тот же для всех</div>
+    <div class="down" aria-hidden="true" style="margin:0">↓</div>
+    <div data-pane="d" data-group="eng">
+      <div class="chain">
+        <div class="nd"><b>📟 docker</b><small>команда, которую вы набираете</small></div><span class="ar">→</span>
+        <div class="nd"><b>🧠 dockerd</b><small>диспетчер, работает постоянно</small></div><span class="ar">→</span>
+        <div class="nd"><b>⚙️ containerd</b><small>управляет жизнью контейнеров</small></div><span class="ar">→</span>
+        <div class="nd"><b>🔧 runc</b><small>запускает процесс</small></div><span class="ar">→</span>
+        <div class="nd c"><b>▶️ Контейнер</b></div>
+      </div>
+    </div>
+    <div data-pane="p" data-group="eng" hidden>
+      <div class="chain">
+        <div class="nd"><b>📟 podman</b><small>команда, почти как docker</small></div><span class="ar">→</span>
+        <div class="nd"><b>🔧 запуск напрямую</b><small>без постоянного диспетчера</small></div><span class="ar">→</span>
+        <div class="nd c"><b>▶️ Контейнер</b></div>
+      </div>
+    </div>
+    <div data-pane="k" data-group="eng" hidden>
+      <div class="chain">
+        <div class="nd"><b>☸️ Kubernetes</b><small>управляет сотнями коробок на многих серверах</small></div><span class="ar">→</span>
+        <div class="nd"><b>⚙️ containerd или CRI-O</b><small>движок на каждом сервере</small></div><span class="ar">→</span>
+        <div class="nd"><b>🔧 runc</b><small>запускает процесс</small></div><span class="ar">→</span>
+        <div class="nd c"><b>▶️ Контейнер</b></div>
+      </div>
+    </div>
+    <div class="analogy"><span class="ai">📄</span><div><span class="al">Аналогия</span>Образ — как PDF-файл: его откроет любая программа для чтения PDF. Docker, Podman, Kubernetes — это разные «читалки», формат один.</div></div>
+  </div>
+  <aside class="notes"><p>Переключите три режима. Мысль: у Docker несколько слоёв, у Podman цепочка короче, в Kubernetes движок внутри кластера. Ключевая идея — общий стандарт образа (OCI), поэтому образ, собранный одним инструментом, запускается другим. Kubernetes отказался от прямой работы с Docker, но образы работают как раньше.</p></aside>
+</section>
+
+<!-- ======================= 13 ТЕСТЫ ======================= -->
+<section data-title="Проверьте себя" class="dom-id">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Проверка</div>
+    <h2>Два вопроса — что выберете вы?</h2>
+  </div>
+  <div class="body col">
+    <div class="mc2">
+      <div class="mc" data-correct="1">
+        <div class="q">Коллега собрал образ в Docker. Запустится ли он у вас в Podman?</div>
+        <div class="opts">
+          <button>Нет, образы Docker работают только в Docker</button>
+          <button>Да, формат образа стандартный (OCI)</button>
+          <button>Только после специальной конвертации</button>
+        </div>
+        <div class="why"><b>Почему так.</b> Формат образа стандартизирован OCI, поэтому образ переносим между Docker, Podman, containerd и CRI-O.</div>
+        <span class="score"></span>
+      </div>
+      <div class="mc" data-correct="1">
+        <div class="q">Вы записали данные в запущенную коробку, а потом удалили контейнер. Что с данными?</div>
+        <div class="opts">
+          <button>Сохранились — они в образе</button>
+          <button>Пропали вместе с контейнером</button>
+          <button>Переехали на склад</button>
+        </div>
+        <div class="why"><b>Почему так.</b> Всё, что контейнер записал в себя, исчезает вместе с ним. Данные, которые нужно сохранить, хранят в томах (volumes) — отдельно от коробки.</div>
+        <span class="score"></span>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>Дайте 20 секунд на каждый вопрос. Первый закрепляет идею общего стандарта, второй — частую ловушку новичков: контейнер временный, данные надо хранить отдельно.</p></aside>
+</section>
+
+<!-- ======================= 14 ОШИБКИ НОВИЧКОВ ======================= -->
+<section data-title="Типичные ошибки новичков" class="dom-fw">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Ошибки</div>
+    <h2>На чём чаще всего спотыкаются в первый месяц</h2>
+    <p class="lede">Что ломается → как правильно.</p>
+  </div>
+  <div class="body col">
+    <div class="mist">
+      <div class="card"><div class="m-bad">Хранят базу данных внутри контейнера</div><div class="m-why">Удалили контейнер — пропали данные.</div><div class="m-ok">Данные — в томе (volume), отдельно от коробки.</div></div>
+      <div class="card"><div class="m-bad">Берут образ с тегом <code class="i">latest</code></div><div class="m-why">Сегодня одна версия, завтра другая — всё «само» поломалось.</div><div class="m-ok">Указывать конкретную версию: <code class="i">postgres:17</code>.</div></div>
+      <div class="card"><div class="m-bad">Кладут пароли внутрь образа</div><div class="m-why">Кто скачал образ — тот видит пароль.</div><div class="m-ok">Передавать секреты снаружи при запуске.</div></div>
+      <div class="card"><div class="m-bad">Запускают «целый компьютер» в одном контейнере</div><div class="m-why">Сложно перезапускать, смотреть логи и менять по частям.</div><div class="m-ok">Одна коробка — одна задача: сайт, база, кэш отдельно.</div></div>
+      <div class="card"><div class="m-bad">Включают <code class="i">--privileged</code>, «чтобы заработало»</div><div class="m-why">Изоляция снимается, контейнер получает власть над хостом.</div><div class="m-ok">Разобраться, чего именно не хватает, и выдать только это.</div></div>
+      <div class="card"><div class="m-bad">Берут случайный образ из интернета</div><div class="m-why">Это чужая программа, и неизвестно, что внутри.</div><div class="m-ok">Брать официальные образы и проверять их сканером.</div></div>
+    </div>
+  </div>
+  <aside class="notes"><p>Пройдите карточки и для каждой спросите зал, встречали ли они такое. Подробности — в первой части темы и в мануале. Самые частые у новичков: данные внутри контейнера и latest.</p></aside>
+</section>
+
+<!-- ======================= 15 ИТОГИ ======================= -->
+<section data-title="Итоги и что дальше" class="dom-gr">
+  <div class="sh">
+    <div class="kicker"><span class="n"></span>Итоги</div>
+    <h2>Что вы теперь можете объяснить коллеге</h2>
+  </div>
+  <div class="qa">
+    <button class="flip" aria-expanded="false"><span class="q">Что такое Docker в одной фразе?</span><span class="a">Программа, которая упаковывает приложение со всем нужным в «коробку» и запускает её одинаково на любом компьютере.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Чем образ отличается от контейнера?</span><span class="a">Образ — готовая неизменяемая упаковка, контейнер — её запущенная копия. Как установочный файл игры и запущенная игра.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Чем контейнер отличается от виртуальной машины?</span><span class="a">У виртуальной машины своя система целиком. Контейнеры используют общее ядро хоста: они легче и быстрее, но граница мягче.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Какие бывают альтернативы Docker?</span><span class="a">Podman, containerd с nerdctl, CRI-O, а на ноутбуке — Rancher Desktop и Colima. Образы у всех общие, формат OCI.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Где Docker помогает на практике?</span><span class="a">Быстрый старт нового человека, одинаковое окружение у всей команды, несколько проектов с разными версиями, эксперименты без мусора и откат на прошлую версию.</span><span class="tap">показать ответ →</span></button>
+    <button class="flip" aria-expanded="false"><span class="q">Где хранить данные, которые нельзя потерять?</span><span class="a">В томах (volumes), а не внутри контейнера: контейнер удалили — данные остались.</span><span class="tap">показать ответ →</span></button>
+  </div>
+  <div class="nextup" style="margin-top:auto">
+    <div><b>Дальше: углубиться</b><br><span>Первая часть — про Dockerfile, слои и безопасность. Затем мануал и квиз. Следующая тема курса — Kubernetes.</span></div>
+    <a class="btn acc" href="../03-docker/">🎞 Часть 1: слои и безопасность</a>
+    <a class="btn ghost" href="../../materials/manuals/03-docker-manual/">📖 Мануал</a>
+    <a class="btn ghost" href="../../materials/manuals/03-docker-quiz/">✅ Квиз</a>
+    <a class="btn ghost" href="../../#toc">☰ Оглавление курса</a>
+  </div>
+  <aside class="notes"><p>Пройдите шесть карточек и попросите зал ответить до открытия. Закройте анонсом: для тех, кто хочет глубже, есть часть 1, мануал и квиз; следующая тема — Kubernetes (как управлять сотнями таких коробок).</p></aside>
+</section>
+
+</main>
+</div>
+
+<div class="progress" aria-hidden="true"><i></i></div>
+<nav class="controls" aria-label="Навигация по слайдам">
+  <a class="nav" href="../../#toc" title="Оглавление курса" aria-label="Оглавление курса">🏠</a>
+  <a class="nav opt" href="../../materials/manuals/03-docker-manual/" title="Полный мануал" aria-label="Полный мануал">📖</a>
+  <span class="sep opt"></span>
+  <button id="prevB" title="Назад (←)" aria-label="Назад">←</button>
+  <span class="cnt" id="cnt" aria-live="polite"></span>
+  <button id="nextB" title="Далее (→)" aria-label="Далее">→</button>
+  <span class="sep opt"></span>
+  <button id="menuB" title="Все слайды (M)" aria-label="Список слайдов">☰</button>
+  <button id="notesB" class="opt" title="Заметки лектора (N)" aria-label="Заметки лектора">🗒</button>
+  <button id="presB" class="opt" title="Режим докладчика (P)" aria-label="Режим докладчика">🎤</button>
+  <button id="fsB" class="opt" title="Полный экран (F)" aria-label="Полный экран">⛶</button>
+</nav>
+<div class="menu" id="menu" role="dialog" aria-label="Список слайдов"></div>
+<div class="notes-panel" id="notesP" aria-live="polite"></div>
+
+<script src="../../assets/deck.js"></script>
+<script src="../../assets/cursus.js"></script>
+<script src="slides.js"></script>
+</body>
+</html>
