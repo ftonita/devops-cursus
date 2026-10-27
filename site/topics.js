@@ -2,7 +2,8 @@
    Новая тема = одна запись здесь. Поля:
    id — номер как в ROADMAP.MD, slug — часть имён файлов, theme — класс темы (cursus.css),
    status — "ready" | "soon", quiz: false — если у темы нет квиза. Пути строятся из id и slug.
-   slides и minutes обновляет scripts/check-decks.py --update-topics. */
+   slides и minutes обновляет scripts/check-decks.py --update-topics.
+   deck2 — вторая презентация к той же теме (отдельная папка slides/NN-slug2/), её числа правятся вручную. */
 window.TOPICS = [
   { id: "00", slug: "git", theme: "theme-git", icon: "🌳", status: "ready",
     title: "Git: основы", level: "База",
@@ -18,7 +19,8 @@ window.TOPICS = [
     title: "Docker и контейнеризация", level: "База",
     pitch: "«У меня работает» перестаёт быть оправданием: приложение едет вместе со своим окружением.",
     bullets: ["Образ, контейнер, слои и кэш", "Dockerfile и multi-stage сборка", "Compose, сети, тома и безопасность"],
-    slides: 16, minutes: 19 },
+    slides: 16, minutes: 19,
+    deck2: { slug: "docker-intro", label: "Часть 2: простыми словами", slides: 15, minutes: 18 } },
   { id: "04", slug: "kubernetes", theme: "theme-k8s", icon: "☸️", status: "soon",
     title: "Kubernetes: основы оркестрации", level: "Средний",
     pitch: "Контейнеры в масштабе: кто их запускает, перезапускает и раскладывает по серверам." },

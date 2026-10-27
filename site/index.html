@@ -91,8 +91,8 @@
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
   var T = window.TOPICS || [], ready = T.filter(function (t) { return t.status === "ready"; });
 
-  var slides = ready.reduce(function (a, t) { return a + (t.slides || 0); }, 0);
-  var mins = ready.reduce(function (a, t) { return a + (t.minutes || 0); }, 0);
+  var slides = ready.reduce(function (a, t) { return a + (t.slides || 0) + (t.deck2 ? t.deck2.slides || 0 : 0); }, 0);
+  var mins = ready.reduce(function (a, t) { return a + (t.minutes || 0) + (t.deck2 ? t.deck2.minutes || 0 : 0); }, 0);
   var stats = [[ready.length, "тем готово"], [slides, "слайдов с интерактивом"], [T.length - ready.length, "тем в планах"]];
   document.getElementById("heroStats").innerHTML = stats.map(function (s) { return "<div><b>" + s[0] + "</b><span>" + s[1] + "</span></div>"; }).join("");
 
@@ -113,6 +113,7 @@
       (isReady && t.bullets ? "<ul>" + t.bullets.map(function (b) { return "<li>" + esc(b) + "</li>"; }).join("") + "</ul>" : "") +
       meta +
       (isReady ? '<div class="acts"><a class="btn" href="slides/' + base + '/">🎞 Презентация</a>' +
+        (t.deck2 ? '<a class="btn" href="slides/' + t.id + "-" + t.deck2.slug + '/">🎞 ' + esc(t.deck2.label) + "</a>" : "") +
         '<a class="btn ghost" href="materials/manuals/' + base + '-manual/">📖 Мануал</a>' +
         (t.quiz === false ? "" : '<a class="btn ghost" href="materials/manuals/' + base + '-quiz/">✅ Квиз</a>') + "</div>" : "") +
       "</article>";
